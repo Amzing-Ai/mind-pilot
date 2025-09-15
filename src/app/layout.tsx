@@ -1,7 +1,13 @@
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { zhCN } from "@clerk/localizations";
+import zhCNlocales from "@/locales/zh.json";
+import merge from "lodash.merge";
+// Step1: 添加组件
+import ThemeProvider from "@/components/ThemeProvider";
+import Header from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -9,17 +15,27 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const localization = merge(zhCN, zhCNlocales);
   return (
-    <html lang="en" className={`${geist.variable}`}>
-      <body>{children}</body>
-    </html>
+    <ClerkProvider localization={localization}>
+      {/* Step2: 设置 suppressHydrationWarning */}
+      <html lang="zh-CN" suppressHydrationWarning>
+        <body>
+          {/* Step3: 设置 ThemeProvider */}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Header />
+            <div className="flex w-full flex-col items-center">{children}</div>
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

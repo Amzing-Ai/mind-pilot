@@ -1,37 +1,47 @@
-import Link from "next/link";
+import { Suspense } from "react";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { currentUser } from "@clerk/nextjs/server";
+import CreateListModal from "@/components/createListModal";
+
+async function Welcome() {
+  const user = await currentUser();
+
+  if (!user) return null;
+
+  return (
+    <Card className="w-full sm:col-span-2" x-chunk="dashboard-05-chunk-0">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">
+          欢迎 {user.firstName} {user.lastName}!
+        </CardTitle>
+        <CardDescription className="max-w-lg leading-relaxed text-balance">
+          道虽迩，不行不至；事虽小，不为不成
+        </CardDescription>
+      </CardHeader>
+      <CardFooter>
+        <CreateListModal />
+      </CardFooter>
+    </Card>
+  );
+}
+
+function WelcomeFallback() {
+  return <Skeleton className="h-[180px] w-full" />;
+}
 
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-        <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-          Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-        </h1>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/usage/first-steps"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">First Steps →</h3>
-            <div className="text-lg">
-              Just the basics - Everything you need to know to set up your
-              database and authentication.
-            </div>
-          </Link>
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/introduction"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">Documentation →</h3>
-            <div className="text-lg">
-              Learn more about Create T3 App, the libraries it uses, and how to
-              deploy it.
-            </div>
-          </Link>
-        </div>
-      </div>
+    <main className="flex w-full flex-col items-center px-4">
+      <Suspense fallback={<WelcomeFallback />}>
+        <Welcome />
+      </Suspense>
     </main>
   );
 }
