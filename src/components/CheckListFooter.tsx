@@ -30,7 +30,7 @@ export default function CheckListFooter({ checkList }: Props) {
     try {
       await deleteList(id);
       toast.success("清单删除成功");
-    } catch (e) {
+    } catch {
       toast.error("清单删除失败，请稍后重试");
     }
   };

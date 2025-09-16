@@ -1,4 +1,4 @@
-import { Icon, addIcon } from "@iconify/react";
+import { Icon } from "@iconify/react";
 
 // enum LogoEnum {
 //   // https://icon-sets.iconify.design/svg-spinners/
@@ -12,7 +12,7 @@ import { Icon, addIcon } from "@iconify/react";
 
 // 直接从Iconify拷贝jsx svg
 
-export function LogoIcon({ style }: { style?: React.CSSProperties }) {
+export function LogoIcon() {
   // 修正Icon组件的使用方式
   return (
     <svg
@@ -104,4 +104,30 @@ function LineMdIconEdit({ style }: { style?: React.CSSProperties }) {
   return <Icon icon="line-md:edit-filled" style={style} />;
 }
 
-export { LineMdIconAdd, LineMdIconEdit, LineMdIconRemove };
+function LineMdIconMoonToSunnyOutlineLoopTransition({
+  style,
+}: {
+  style?: React.CSSProperties;
+}) {
+  return (
+    <Icon icon="line-md:moon-to-sunny-outline-loop-transition" style={style} />
+  );
+}
+
+function LineMdIconSunnyOutlineToMoonLoopTransition({
+  style,
+}: {
+  style?: React.CSSProperties;
+}) {
+  return (
+    <Icon icon="line-md:sunny-outline-to-moon-loop-transition" style={style} />
+  );
+}
+
+export {
+  LineMdIconAdd,
+  LineMdIconEdit,
+  LineMdIconRemove,
+  LineMdIconMoonToSunnyOutlineLoopTransition,
+  LineMdIconSunnyOutlineToMoonLoopTransition,
+};

@@ -26,7 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarDays, CirclePlus } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { LineMdIconAdd } from "@/lib/iconify";
 
 import { type List } from "@prisma/client";
@@ -70,7 +70,7 @@ export default function CreateTaskModal({ checkList }: Props) {
       await createTask(data);
       toast.success("已添加");
       onOpenChange(false);
-    } catch (e) {
+    } catch {
       toast.error("添加失败，请稍后重试");
     }
   };
