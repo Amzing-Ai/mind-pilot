@@ -10,11 +10,25 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
+model List {
     id        Int      @id @default(autoincrement())
     name      String
+    userId    String
+    color     String
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    @@index([name])
+    tasks Task[]
+}
+
+model Task {
+    id        Int       @id @default(autoincrement())
+    content   String
+    userId    String
+    done      Boolean   @default(false)
+    expiresAt DateTime?
+    createdAt DateTime  @default(now())
+
+    ListId Int
+    list   List @relation(fields: [ListId], references: [id], onDelete: Cascade)
 }

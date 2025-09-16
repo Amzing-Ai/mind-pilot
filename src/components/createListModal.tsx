@@ -39,6 +39,10 @@ import { cn } from "@/lib/utils";
 import { ListMap } from "@/lib/const";
 import { useState } from "react";
 
+import { createList } from "@/actions/list";
+import { toast } from "sonner";
+import { LineMdIconEdit } from "@/lib/iconify";
+
 export default function CreateListModal() {
   const form = useForm({
     resolver: zodResolver(createListZodSchema),
@@ -51,8 +55,18 @@ export default function CreateListModal() {
   const [open, setOpen] = useState(false);
 
   const onSubmit = async (data: createListZodSchemaType) => {
-    console.log(data);
-    setOpen(false);
+    try {
+      await createList(data);
+      onOpenChange(false);
+      toast.success("恭喜您", {
+        description: "清单创建成功！",
+      });
+    } catch (e) {
+      console.log(e);
+      toast.error("矮油", {
+        description: "清单创建失败！",
+      });
+    }
   };
 
   const onOpenChange = (open: boolean) => {
@@ -63,7 +77,10 @@ export default function CreateListModal() {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
-        <Button>添加清单</Button>
+        <Button>
+          <LineMdIconEdit />
+          添加清单
+        </Button>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>

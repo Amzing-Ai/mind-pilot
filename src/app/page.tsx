@@ -9,6 +9,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { currentUser } from "@clerk/nextjs/server";
 import CreateListModal from "@/components/createListModal";
+import { CheckLists } from "@/components/CheckLists";
+import { TitleTypedWelcome } from "@/components/fun-component/Title-typed";
 
 async function Welcome() {
   const user = await currentUser();
@@ -22,7 +24,7 @@ async function Welcome() {
           欢迎 {user.firstName} {user.lastName}!
         </CardTitle>
         <CardDescription className="max-w-lg leading-relaxed text-balance">
-          道虽迩，不行不至；事虽小，不为不成
+          <TitleTypedWelcome />
         </CardDescription>
       </CardHeader>
       <CardFooter>
@@ -41,6 +43,9 @@ export default function HomePage() {
     <main className="flex w-full flex-col items-center px-4">
       <Suspense fallback={<WelcomeFallback />}>
         <Welcome />
+      </Suspense>
+      <Suspense fallback={<WelcomeFallback />}>
+        <CheckLists />
       </Suspense>
     </main>
   );
