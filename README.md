@@ -1,4 +1,5 @@
-# 🚀 **MindPilot——让AI成为你人生的飞行员！**
+<img src="./public/images/logo.png" />
+# ——让AI成为你人生的飞行员！**
 
 还在为任务堆积、计划混乱而苦恼？
 还在用传统清单App机械打卡、被动提醒？
