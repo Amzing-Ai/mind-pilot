@@ -1,14 +1,13 @@
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
-import { zhCN } from "@clerk/localizations";
 import zhCNlocales from "@/locales/zh.json";
 import merge from "lodash.merge";
 // Step1: 添加组件
 import ThemeProvider from "@/components/ThemeProvider";
 import Header from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "MindPilot | 智慧笔记",
@@ -20,12 +19,10 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const localization = merge(zhCN, zhCNlocales);
   return (
-    <ClerkProvider localization={localization}>
-      {/* Step2: 设置 suppressHydrationWarning */}
-      <html lang="zh-CN" suppressHydrationWarning>
-        <body>
+    <html lang="zh-CN" suppressHydrationWarning>
+      <body>
+        <SessionProvider>
           {/* Step3: 设置 ThemeProvider */}
           <ThemeProvider
             attribute="class"
@@ -37,8 +34,8 @@ export default function RootLayout({
             <div className="flex w-full flex-col items-center">{children}</div>
             <Toaster position="top-center" richColors />
           </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </SessionProvider>
+      </body>
+    </html>
   );
 }

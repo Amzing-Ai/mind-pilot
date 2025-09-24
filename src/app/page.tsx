@@ -7,22 +7,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import CreateListModal from "@/components/createListModal";
 import { CheckLists } from "@/components/CheckLists";
 import { TitleTypedWelcome } from "@/components/fun-component/Title-typed";
+import { redirect } from "next/navigation";
 
 async function Welcome() {
-  const user = await currentUser();
+  const session = await auth();
 
-  if (!user) return null;
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
 
   return (
     <Card className="w-full sm:col-span-2" x-chunk="dashboard-05-chunk-0">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">
-          欢迎 {user.firstName} {user.lastName}!
-        </CardTitle>
+        <CardTitle className="text-lg">欢迎 {session.user.name}</CardTitle>
         <CardDescription className="max-w-lg leading-relaxed text-balance">
           <TitleTypedWelcome />
         </CardDescription>

@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { type Task, type List } from "@prisma/client";
 import {
   Card,
@@ -13,6 +13,7 @@ import CheckListFooter from "@/components/CheckListFooter";
 import { cn } from "@/lib/utils";
 import { ListMap } from "@/lib/const";
 import TaskItem from "@/components/TaskItem";
+import UnauthenticatedPage from "@/components/Unauthenticated";
 
 interface Props {
   checkList: List & {
@@ -49,13 +50,19 @@ function CheckList({ checkList }: Props) {
 }
 
 export async function CheckLists() {
-  const user = await currentUser();
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    // return <UnauthenticatedPage />;
+    return null;
+  }
+
   const checkLists = await prisma.list.findMany({
     include: {
       tasks: true,
     },
     where: {
-      userId: user?.id,
+      userId: session?.user?.id,
     },
   });
 

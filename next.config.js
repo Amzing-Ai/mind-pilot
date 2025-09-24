@@ -5,6 +5,11 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+    experimental: {
+        // 把终端日志同时打到「浏览器控制台」
+        serverComponentsExternalPackages: ['next-logger']
+    }
+};
 
 export default config;

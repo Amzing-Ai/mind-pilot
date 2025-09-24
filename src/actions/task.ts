@@ -1,6 +1,6 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import {
@@ -9,9 +9,9 @@ import {
 } from "@/schema/createTask";
 
 export async function createTask(data: createTaskZodSchemaType) {
-    const user = await currentUser();
+    const session = await auth();
 
-    if (!user) {
+    if (!(session?.user?.id)) {
         throw new Error("用户未登录，请先登录");
     }
 
@@ -28,7 +28,7 @@ export async function createTask(data: createTaskZodSchemaType) {
 
     await prisma.task.create({
         data: {
-            userId: user.id,
+            userId: session.user.id,
             content,
             expiresAt,
             list: {
@@ -45,16 +45,16 @@ export async function createTask(data: createTaskZodSchemaType) {
 // ...
 
 export async function setTaskStatus(id: number, done: boolean) {
-    const user = await currentUser();
+    const session = await auth();
 
-    if (!user) {
+    if (!(session?.user?.id)) {
         throw new Error("用户未登录，请先登录");
     }
 
     await prisma.task.update({
         where: {
             id: id,
-            userId: user.id,
+            userId: session.user.id,
         },
         data: {
             done: done,

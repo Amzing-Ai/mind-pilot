@@ -14,6 +14,7 @@
 - **日程、优先级、协作全自动排布，效率提升看得见！**
 - **AI陪伴成长，定期复盘，见证你的每一次进步！**
 - **跨平台支持，随时随地，想法一闪，任务即来！**
+- **强交互UI, 带给用户现代化应用极致体验！**
 
 ---
 
@@ -32,10 +33,10 @@
 
 > 现在，和MindPilot一起，飞向更高效的未来吧！
 
-### 🔧 Create Options By T3 APP
+### 俩种主题模式
 
-<img src="./public/images/create-options.png" />
-
+<img src="./public/images/Readme/login-dark.png" />
+<img src="./public/images/Readme/login-light.png" />
 
 ### Start App And Connect DB
 假设你本地已经启动了数据库那么请你修改env中的配置问题
@@ -65,3 +66,24 @@ If you are not familiar with the different technologies used in this project, pl
 - [Drizzle](https://orm.drizzle.team)
 - [Tailwind CSS](https://tailwindcss.com)
 - [tRPC](https://trpc.io)
+
+### 🔧 Create Options By T3 APP
+
+<img src="./public/images/create-options.png" />
+
+
+###  Tech Stack
+- **Next.js**
+- **next-themes**
+- **@iconify/react**
+- **framer-motion**
+- **radix-ui**
+- **NextAuth.js**
+- **Prisma**
+- **Zod**
+- **Tailwind CSS**
+- **React**
+- **TypeScript**
+- **MySQL**
+- **ai**
+- **@ai-sdk/deepseek**

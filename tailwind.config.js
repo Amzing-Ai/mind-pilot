@@ -3,9 +3,5 @@ module.exports = {
     content: [
         "./src/**/*.{js,ts,jsx,tsx,mdx}", // ✅ 修正这里
     ],
-    theme: {
-        extend: {
-        },
-    },
     plugins: [require("tailwindcss-animate")],
 };

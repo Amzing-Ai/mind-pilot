@@ -4,14 +4,14 @@ import {
     createListZodSchema,
     type createListZodSchemaType,
 } from "@/schema/createList";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 
 export async function createList(data: createListZodSchemaType) {
-    const user = await currentUser();
+    const session = await auth();
 
-    if (!user) {
+    if (!(session?.user?.id)) {
         throw new Error("用户未登录，请先登录");
     }
 
@@ -26,7 +26,7 @@ export async function createList(data: createListZodSchemaType) {
 
     await prisma.list.create({
         data: {
-            userId: user.id,
+            userId: session.user.id,
             color: data.color,
             name: data.name,
         },
@@ -41,15 +41,16 @@ export async function createList(data: createListZodSchemaType) {
 }
 
 export async function deleteList(id: number) {
-    const user = await currentUser();
-    if (!user) {
+    const session = await auth();
+
+    if (!(session?.user?.id)) {
         throw new Error("用户未登录，请先登录");
     }
 
     await prisma.list.delete({
         where: {
             id: id,
-            userId: user.id,
+            userId: session.user.id,
         },
     });
 
