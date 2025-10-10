@@ -1,11 +1,9 @@
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
-import zhCNlocales from "@/locales/zh.json";
-import merge from "lodash.merge";
 // Step1: 添加组件
 import ThemeProvider from "@/components/ThemeProvider";
-import Header from "@/components/Header";
+import Menu from "@/components/Menu";
 import { Toaster } from "@/components/ui/sonner";
 import { SessionProvider } from "next-auth/react";
 
@@ -30,8 +28,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <Header />
-            <div className="flex w-full flex-col items-center">{children}</div>
+            <Menu>
+              <div className="flex w-full flex-col items-center">{children}</div>
+            </Menu>
             <Toaster position="top-center" richColors />
           </ThemeProvider>
         </SessionProvider>

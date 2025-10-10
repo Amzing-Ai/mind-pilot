@@ -62,7 +62,14 @@ export default function Login() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
           >
-            <h1 className="text-2xl font-bold">Glad to see you!</h1>
+            {/* <h1 className="text-2xl font-bold">Glad to see you!</h1> */}
+            <Image
+              className="animate-in fade-in duration-1500 dark:invert"
+              src="/images/logo.png"
+              alt="logo"
+              width={180}
+              height={40}
+            />
 
             {/* 一直动来动去的容器 */}
             <motion.div
