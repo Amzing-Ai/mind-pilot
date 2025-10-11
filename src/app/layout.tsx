@@ -18,18 +18,18 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
-      <body>
+    <html lang="zh-CN" suppressHydrationWarning className="h-full">
+      <body className="h-full">
         <SessionProvider>
           {/* Step3: 设置 ThemeProvider */}
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
             disableTransitionOnChange
           >
             <Menu>
-              <div className="flex w-full flex-col items-center">{children}</div>
+              <div className="flex w-full h-full flex-col items-center">{children}</div>
             </Menu>
             <Toaster position="top-center" richColors />
           </ThemeProvider>

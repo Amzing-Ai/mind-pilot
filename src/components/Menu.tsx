@@ -9,6 +9,7 @@ import {
   Settings,
 } from "lucide-react";
 import clsx from "clsx";
+import { useEffect, useState } from "react";
 
 type MenuItem = {
   key: string;
@@ -18,8 +19,8 @@ type MenuItem = {
 };
 
 const items: MenuItem[] = [
-  { key: "assistant", name: "智慧助手", href: "/chat", icon: Bot },
   { key: "details", name: "任务详情", href: "/", icon: ListTodo },
+  { key: "assistant", name: "智慧助手", href: "/chat", icon: Bot },
   { key: "analysis", name: "任务分析", href: "/analysis", icon: BarChart3 },
   { key: "settings", name: "设置", href: "/settings", icon: Settings },
 ];
@@ -27,9 +28,14 @@ const items: MenuItem[] = [
 export default function Menu({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <div className="flex min-h-screen w-full lg:flex-row">
+    <div className="flex h-screen w-full lg:flex-row overflow-hidden">
       {/* 左侧边栏：≥lg 显示 */}
       <aside className="hidden lg:flex lg:h-screen lg:w-64 lg:flex-col lg:bg-gradient-to-b lg:from-indigo-600/20 lg:via-blue-600/10 lg:to-purple-600/20 lg:backdrop-blur">
         <div className="flex h-full w-full flex-col gap-3 p-4">
@@ -54,18 +60,20 @@ export default function Menu({ children }: { children: React.ReactNode }) {
                   )}
                 >
                   {/* 背景高亮 */}
-                  <AnimatePresence>
-                    {active && (
-                      <motion.span
-                        layoutId="menu-active"
-                        className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500 shadow-lg"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      />
-                    )}
-                  </AnimatePresence>
+                  {mounted && (
+                    <AnimatePresence>
+                      {active && (
+                        <motion.span
+                          layoutId="menu-active"
+                          className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500 shadow-lg"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        />
+                      )}
+                    </AnimatePresence>
+                  )}
                   <span
                     className={clsx(
                       "flex h-9 w-9 items-center justify-center rounded-lg",
@@ -85,7 +93,7 @@ export default function Menu({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* 右侧内容区 */}
-      <main className="flex min-h-screen w-full flex-1 flex-col p-4 pb-20 lg:pb-4">
+      <main className="flex h-screen w-full flex-1 flex-col overflow-hidden pb-10 lg:pb-0">
         <div className="flex-1 overflow-y-auto">
           {children}
         </div>
@@ -111,18 +119,20 @@ export default function Menu({ children }: { children: React.ReactNode }) {
                       : "text-gray-700 dark:text-gray-200"
                   )}
                 >
-                  <AnimatePresence>
-                    {active && (
-                      <motion.span
-                        layoutId="menu-active-mobile"
-                        className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      />
-                    )}
-                  </AnimatePresence>
+                  {mounted && (
+                    <AnimatePresence>
+                      {active && (
+                        <motion.span
+                          layoutId="menu-active-mobile"
+                          className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        />
+                      )}
+                    </AnimatePresence>
+                  )}
                   <Icon className="h-5 w-5" />
                   <span className="hidden sm:inline">{item.name}</span>
                 </motion.button>

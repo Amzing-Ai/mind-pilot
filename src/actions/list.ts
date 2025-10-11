@@ -57,3 +57,22 @@ export async function deleteList(id: number) {
     revalidatePath("/");
 }
 
+export async function getFirstUserList() {
+    const session = await auth();
+
+    if (!(session?.user?.id)) {
+        throw new Error("用户未登录，请先登录");
+    }
+
+    const list = await prisma.list.findFirst({
+        where: {
+            userId: session.user.id,
+        },
+        orderBy: {
+            createdAt: 'asc',
+        },
+    });
+
+    return list;
+}
+

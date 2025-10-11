@@ -21,3 +21,13 @@ export function TitleTypedWelcome() {
     />
   );
 }
+
+export function TitleTypedDescription() {
+  return (
+    <ReactTyped
+      strings={["用一句话描述您的目标，AI将为您智能拆解成可执行的任务清单。"]}
+      typeSpeed={40}
+      className="text-lg text-white/70 leading-relaxed"
+    />
+  );
+}

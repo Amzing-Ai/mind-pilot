@@ -119,7 +119,47 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  html,
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground h-full w-full overflow-hidden;
+    margin: 0;
+    padding: 0;
   }
+
+  #__next {
+    @apply h-full w-full;
+  }
+}
+
+/* 强制模态框文字为黑色，不受主题影响 */
+.modal-content {
+  color: #000000 !important;
+}
+
+.modal-content * {
+  color: #000000 !important;
+}
+
+.modal-content h1,
+.modal-content h2,
+.modal-content h3,
+.modal-content h4,
+.modal-content h5,
+.modal-content h6 {
+  color: #000000 !important;
+}
+
+.modal-content p,
+.modal-content span,
+.modal-content div,
+.modal-content li,
+.modal-content ul,
+.modal-content ol {
+  color: #000000 !important;
+}
+
+.modal-content strong,
+.modal-content b {
+  color: #000000 !important;
 }
