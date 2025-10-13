@@ -14,6 +14,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "postinstall": "prisma generate",
+    "prisma:fix": "taskkill /f /im node.exe 2>nul & timeout /t 2 /nobreak >nul & rmdir /s /q node_modules\\.pnpm\\@prisma+client@6.16.1_prism_165b0be88f810880210521a44004df9c\\node_modules\\.prisma\\client 2>nul & npx prisma generate",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",

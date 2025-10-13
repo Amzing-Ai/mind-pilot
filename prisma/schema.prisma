@@ -11,11 +11,12 @@ datasource db {
 }
 
 model User {
-    id       String  @id @default(uuid())
-    username String
-    password String
-    avatar   String?
-    lists    List[]
+    id            String         @id @default(uuid())
+    username      String
+    password      String
+    avatar        String?
+    lists         List[]
+    conversations Conversation[]
 }
 
 model List {
@@ -43,4 +44,18 @@ model Task {
 
     ListId Int
     list   List @relation(fields: [ListId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+    id         String   @id @default(uuid())
+    title      String   @db.VarChar(500) // 对话标题，从用户输入中提取
+    userInput  String   @db.Text // 用户输入内容
+    aiResponse String   @db.Text // AI回复内容
+    taskCount  Int? // 生成的任务数量
+    listName   String?  @db.VarChar(200) // 生成的清单名称
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

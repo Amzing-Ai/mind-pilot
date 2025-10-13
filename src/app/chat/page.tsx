@@ -5,10 +5,12 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Send, Sparkles, Zap, CheckCircle, Lightbulb, Rocket, Target, Clock, TrendingUp, Users, Edit3, Loader2, Plus, Trash2, Flame, Save, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { parseTasksFromAIResponse, validateParsedTasks, extractListNameFromAIResponse, type ParsedTask } from "@/lib/taskParser";
+import { parseTasksFromAIResponse, validateParsedTasks, extractListNameFromAIResponse, extractAISuggestions, extractRiskWarnings, extractAdditionalContent, type ParsedTask } from "@/lib/taskParser";
 import { createListAndTasks } from "@/actions/createListAndTasks";
 import { toast } from "sonner";
 import { TitleTypedDescription } from "@/components/fun-component/Title-typed";
+import ConversationHistory from "@/components/ConversationHistory";
+import ConversationDetail from "@/components/ConversationDetail";
 
 export default function Chat() {
   const [input, setInput] = useState("");
@@ -16,8 +18,25 @@ export default function Chat() {
   const [isCreatingTasks, setIsCreatingTasks] = useState(false);
   const [parsedTasks, setParsedTasks] = useState<ParsedTask[]>([]);
   const [extractedListName, setExtractedListName] = useState<string>("");
+  const [aiSuggestions, setAiSuggestions] = useState<string>("");
+  const [riskWarnings, setRiskWarnings] = useState<string>("");
+  const [additionalContent, setAdditionalContent] = useState<string>("");
   const [clickedAction, setClickedAction] = useState<number | null>(null);
   const [taskGenerationMode, setTaskGenerationMode] = useState<'detailed' | 'concise'>('detailed');
+  const [showConversationHistory, setShowConversationHistory] = useState(false);
+  const [showConversationDetail, setShowConversationDetail] = useState(false);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [isAIStreaming, setIsAIStreaming] = useState(false);
+  const [isWaitingForAI, setIsWaitingForAI] = useState(false);
+  const [waitingMessage, setWaitingMessage] = useState("AI正在思考中...");
+  const [recentConversations, setRecentConversations] = useState<Array<{
+    id: string;
+    title: string;
+    userInput: string;
+    taskCount?: number;
+    listName?: string;
+    createdAt: string;
+  }>>([]);
   const { messages, sendMessage } = useChat();
 
   // 自动调整textarea高度
@@ -28,8 +47,10 @@ export default function Chat() {
 
   // 监听input变化，自动调整高度
   useEffect(() => {
-    const textarea = document.querySelector('textarea[placeholder*="试试说"]')!;
-    adjustTextareaHeight(textarea);
+    const textarea = document.querySelector('textarea[placeholder*="试试说"]');
+    if (textarea instanceof HTMLTextAreaElement) {
+      adjustTextareaHeight(textarea);
+    }
   }, [input]);
 
   // 监听消息变化，当有新的AI回复时显示模态框并解析任务
@@ -37,23 +58,124 @@ export default function Chat() {
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage && lastMessage.role === "assistant") {
-        setShowModal(true);
-
-        // 解析AI回复中的任务
+        // 检查AI回复是否还在流式传输中
         const messageContent = lastMessage.parts ?
           lastMessage.parts.map(part => part.type === 'text' ? part.text : '').join('') :
           '';
 
+        // 如果消息内容为空或很短，说明还在流式传输中
+        if (!messageContent || messageContent.length < 100) {
+          setIsAIStreaming(true);
+          return;
+        }
+
+        // 检查是否包含任务相关的关键词，确保是完整的回复
+        const hasTaskKeywords = messageContent.includes('任务') ||
+                               messageContent.includes('清单') ||
+                               messageContent.includes('步骤') ||
+                               messageContent.includes('计划');
+
+        if (!hasTaskKeywords) {
+          setIsAIStreaming(true);
+          return;
+        }
+
+        // AI回复完成，停止流式状态和等待状态
+        setIsAIStreaming(false);
+        setIsWaitingForAI(false);
+
+        // 解析AI回复中的任务
         if (messageContent) {
           const tasks = parseTasksFromAIResponse(messageContent);
           const listName = extractListNameFromAIResponse(messageContent);
+          const suggestions = extractAISuggestions(messageContent);
+          const risks = extractRiskWarnings(messageContent);
+          const additional = extractAdditionalContent(messageContent);
           console.log("提取的清单名称:", listName);
           setParsedTasks(tasks);
           setExtractedListName(listName || "AI生成任务");
+          setAiSuggestions(suggestions);
+          setRiskWarnings(risks);
+          setAdditionalContent(additional);
+
+          // 只有在解析到任务后才显示模态框，并添加小延迟确保内容稳定
+          if (tasks.length > 0) {
+            setTimeout(() => {
+              setShowModal(true);
+            }, 300); // 300ms延迟，确保AI回复完全稳定
+          }
         }
+      } else if (lastMessage && lastMessage.role === "user") {
+        // 用户发送消息时开始等待AI回复
+        setIsWaitingForAI(true);
+        setIsAIStreaming(false);
+        setShowModal(false);
+        setWaitingMessage("AI正在思考中...");
       }
     }
   }, [messages]);
+
+  // 管理等待消息的定时更新
+  useEffect(() => {
+    if (!isWaitingForAI) return;
+
+    const waitingMessages = [
+      "AI正在思考中...",
+      "正在分析您的需求...",
+      "正在生成任务清单...",
+      "即将为您呈现结果..."
+    ];
+
+    let messageIndex = 0;
+    const messageInterval = setInterval(() => {
+      messageIndex = (messageIndex + 1) % waitingMessages.length;
+      setWaitingMessage(waitingMessages[messageIndex] ?? "AI正在思考中...");
+    }, 2000);
+
+    return () => clearInterval(messageInterval);
+  }, [isWaitingForAI]);
+
+  // 获取最近3条对话
+  const fetchRecentConversations = async () => {
+    try {
+      const response = await fetch('/api/conversations?page=1&limit=3');
+      const data = await response.json();
+      if (data.conversations) {
+        setRecentConversations(data.conversations as Array<{
+          id: string;
+          title: string;
+          userInput: string;
+          taskCount?: number;
+          listName?: string;
+          createdAt: string;
+        }>);
+      }
+    } catch (error) {
+      console.error('获取最近对话失败:', error);
+    }
+  };
+
+  // 组件挂载时获取最近对话
+  useEffect(() => {
+    void fetchRecentConversations();
+  }, []);
+
+  // 格式化时间显示
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+
+    if (diffInHours < 1) {
+      return "刚刚";
+    } else if (diffInHours < 24) {
+      return `${diffInHours}小时前`;
+    } else if (diffInHours < 48) {
+      return "昨天";
+    } else {
+      return date.toLocaleDateString("zh-CN");
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,12 +209,75 @@ export default function Chat() {
 
     // 自动聚焦到输入框并调整高度
     setTimeout(() => {
-      const textareaElement = document.querySelector('textarea[placeholder*="试试说"]')!;
-      textareaElement.focus();
-      textareaElement.setSelectionRange(template.length, template.length);
-      adjustTextareaHeight(textareaElement);
+      const textareaElement = document.querySelector('textarea[placeholder*="试试说"]');
+      if (textareaElement instanceof HTMLTextAreaElement) {
+        textareaElement.focus();
+        textareaElement.setSelectionRange(template.length, template.length);
+        adjustTextareaHeight(textareaElement);
+      }
     }, 100);
   };
+
+  // 保存对话到数据库
+  const saveConversation = async () => {
+    if (messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === "assistant") {
+      // 找到最后一个用户消息
+      const userMessage = messages.filter(msg => msg.role === "user").pop();
+      console.log('找到的用户消息:', userMessage);
+
+      const userInput = (userMessage as { content?: string; parts?: Array<{ type: string; text: string }> })?.content ??
+        (userMessage as { content?: string; parts?: Array<{ type: string; text: string }> })?.parts?.map((part: { type: string; text: string }) =>
+          part.type === 'text' ? part.text : ''
+        ).join('') ?? input;
+
+      console.log('提取的用户输入:', userInput);
+
+      const aiResponse = lastMessage.parts ?
+        lastMessage.parts.map(part => part.type === 'text' ? part.text : '').join('') : '';
+
+      // 生成对话标题（从用户输入中提取前20个字符）
+      const title = userInput.length > 20 ? userInput.substring(0, 20) + '...' : userInput;
+
+      console.log('生成的标题:', title);
+
+      // 确保所有必要字段都有值
+      if (!title || !userInput || !aiResponse) {
+        console.error('保存对话失败: 缺少必要字段', { title, userInput, aiResponse });
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title,
+            userInput,
+            aiResponse,
+            taskCount: parsedTasks.length,
+            listName: extractedListName || null,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('保存对话失败:', errorData);
+          return;
+        }
+
+             console.log('对话保存成功');
+             // 保存成功后刷新最近对话列表
+             void fetchRecentConversations();
+           } catch (error) {
+             console.error('保存对话失败:', error);
+           }
+         }
+       };
 
   const handleCreateTasks = async () => {
     console.log("开始创建任务，解析出的任务:", parsedTasks);
@@ -126,6 +311,10 @@ export default function Chat() {
 
       if (result.success) {
         toast.success(`成功创建清单"${extractedListName}"和${result.taskCount}个任务！`);
+
+        // 保存对话到数据库
+        await saveConversation();
+
         setShowModal(false);
         setParsedTasks([]);
         setExtractedListName("");
@@ -583,32 +772,98 @@ export default function Chat() {
               <h3 className="text-lg font-semibold text-white">最近对话</h3>
             </div>
             <div className="space-y-3">
-              {[
-                { title: "产品发布计划", desc: "制定完整的产品发布时间表和营销策略...", time: "2小时前" },
-                { title: "团队培训方案", desc: "设计为期一周的新员工入职培训计划...", time: "昨天" },
-                { title: "季度OKR规划", desc: "制定Q4季度的目标和关键结果...", time: "3天前" },
-              ].map((conversation, index) => (
-                <div key={`conversation-${index}-${conversation.title.slice(0, 10) || 'empty'}`} className="group cursor-pointer rounded-lg p-3 transition-colors hover:bg-white/10">
-                  <h4 className="text-sm font-medium text-white group-hover:text-indigo-300">{conversation.title}</h4>
-                  <p className="text-xs text-white/60">{conversation.desc}</p>
-                  <p className="text-xs text-white/40">{conversation.time}</p>
+              {recentConversations.length > 0 ? (
+                recentConversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className="group cursor-pointer rounded-lg p-3 transition-colors hover:bg-white/10"
+                    onClick={() => {
+                      setSelectedConversationId(conversation.id);
+                      setShowConversationDetail(true);
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-white group-hover:text-indigo-300 truncate">
+                          {conversation.title}
+                        </h4>
+                        <p className="text-xs text-white/60 line-clamp-2 mt-1">
+                          {conversation.userInput}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <p className="text-xs text-white/40">{formatTime(conversation.createdAt)}</p>
+                          {conversation.taskCount && (
+                            <span className="text-xs text-green-300">
+                              {conversation.taskCount}个任务
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <div className="w-2 h-2 rounded-full bg-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-white/60">暂无对话记录</p>
+                  <p className="text-xs text-white/40 mt-1">开始与AI助手对话来创建记录</p>
                 </div>
-              ))}
+              )}
             </div>
-            <button className="mt-4 text-sm text-indigo-300 hover:text-indigo-200">
+            <button
+              onClick={() => setShowConversationHistory(true)}
+              className="mt-4 text-sm text-indigo-300 hover:text-indigo-200"
+            >
               查看全部对话历史 →
             </button>
           </div>
         </motion.div>
       </div>
 
-      {/* Floating AI Response Modal */}
+      {/* AI回复等待提示 */}
       <AnimatePresence>
-        {showModal && latestMessage && latestMessage.role === "assistant" && (
+        {isWaitingForAI && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed inset-0 flex items-center justify-center z-40 bg-black/20 backdrop-blur-sm"
+          >
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/50 p-6 max-w-sm mx-4">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                    <Bot className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-800">{waitingMessage}</p>
+                  <p className="text-xs text-gray-500 mt-1">请稍候，正在为您生成任务清单</p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating AI Response Modal - 只有在AI回复完全生成且解析到任务后才显示 */}
+      <AnimatePresence>
+        {showModal && !isAIStreaming && parsedTasks.length > 0 && latestMessage && latestMessage.role === "assistant" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           >
             <motion.div
@@ -616,7 +871,7 @@ export default function Chat() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="relative max-h-[80vh] w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl"
+              className="relative max-h-[80vh] w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl flex flex-col"
             >
               {/* Modal Header */}
               <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-6">
@@ -638,38 +893,36 @@ export default function Chat() {
               </div>
 
               {/* Modal Content */}
-              <div className="max-h-80 overflow-y-auto p-6">
-                <div className="modal-content prose prose-sm max-w-none text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-ul:text-black prose-li:text-black prose-h3:text-lg prose-h3:font-semibold prose-h3:text-black prose-h3:mb-2 prose-h3:mt-4 prose-p:mb-2 prose-strong:font-semibold prose-a:text-black prose-code:text-black prose-pre:text-black [&>*]:text-black [&>*]:!text-black [&_*]:text-black [&_*]:!text-black">
-                  <ReactMarkdown>
-                    {latestMessage.parts ?
-                      latestMessage.parts.map(part => part.type === 'text' ? part.text : '').join('') :
-                      'No content available'
-                    }
-                  </ReactMarkdown>
-                </div>
-
-                {/* 任务预览 - 移到内容区域内部 */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {/* 只有在AI回复完全生成后才显示内容，避免闪烁 */}
+                {!isAIStreaming && parsedTasks.length > 0 && (
+                  <>
+                    {/* 任务统计卡片 */}
                 {parsedTasks.length > 0 && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
-                      <span className="text-lg">📋</span>
-                      发现 {parsedTasks.length} 个任务
-                    </h4>
-                    {extractedListName && (
-                      <div className="mb-3 p-2 bg-blue-100 rounded text-sm text-blue-700">
-                        <span className="font-medium">清单名称:</span> {extractedListName}
+                  <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="rounded-lg bg-blue-500 p-2">
+                        <span className="text-white text-lg">📋</span>
                       </div>
-                    )}
-                    <div className="space-y-2">
+                      <div>
+                        <h4 className="font-bold text-blue-800 text-lg">已为您总结 {parsedTasks.length} 个任务</h4>
+                        {extractedListName && (
+                          <p className="text-blue-600 text-sm">清单: {extractedListName}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 任务列表 - 显示全部任务 */}
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
                       {parsedTasks.map((task, index) => (
-                        <div key={`parsed-task-${index}-${task.content.slice(0, 20) || 'empty'}`} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="text-blue-600 font-medium text-xs">
-                              {index + 1}.
-                            </span>
-                            <span className="text-gray-700 text-xs leading-tight">{task.content}</span>
-                          </div>
-                          <span className={`px-2 py-1 rounded text-xs w-fit ${
+                        <div key={`task-preview-${index}`} className="flex items-center gap-2 text-sm">
+                          <span className="text-blue-600 font-medium text-xs min-w-[20px]">
+                            {index + 1}.
+                          </span>
+                          <span className="text-gray-700 text-xs leading-tight flex-1">
+                            {task.content}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
                             task.priority === 'urgent' ? 'bg-red-100 text-red-700' :
                             task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
                             task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
@@ -684,10 +937,62 @@ export default function Chat() {
                     </div>
                   </div>
                 )}
+
+                {/* AI建议和风险提示 */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* AI建议 */}
+                  {aiSuggestions && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="rounded-lg bg-green-500 p-2">
+                          <Lightbulb className="h-4 w-4 text-white" />
+                        </div>
+                        <h5 className="font-semibold text-green-800">AI建议</h5>
+                      </div>
+                      <div className="text-sm text-green-700 leading-relaxed">
+                        {aiSuggestions}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 风险提示 */}
+                  {riskWarnings && (
+                    <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="rounded-lg bg-orange-500 p-2">
+                          <span className="text-white text-sm">⚠️</span>
+                        </div>
+                        <h5 className="font-semibold text-orange-800">可能风险</h5>
+                      </div>
+                      <div className="text-sm text-orange-700 leading-relaxed">
+                        {riskWarnings}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 显示其他内容 */}
+                {additionalContent && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="rounded-lg bg-gray-500 p-2">
+                        <span className="text-white text-sm">📄</span>
+                      </div>
+                      <h5 className="font-semibold text-gray-800">其他信息</h5>
+                    </div>
+                    <div className="modal-content prose prose-sm max-w-none text-gray-700">
+                      <ReactMarkdown>
+                        {additionalContent}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+                  </>
+                )}
               </div>
 
-              {/* Modal Footer */}
-              <div className="border-t bg-gray-50 p-4 sm:p-6">
+              {/* Modal Footer - 固定在底部 */}
+              <div className="border-t bg-gray-50 p-4 sm:p-6 flex-shrink-0">
 
                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                   <motion.button
@@ -949,6 +1254,31 @@ export default function Chat() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 对话历史模态框 */}
+      <ConversationHistory
+        isOpen={showConversationHistory}
+        onClose={() => setShowConversationHistory(false)}
+        onSelectConversation={(conversation) => {
+          setSelectedConversationId(conversation.id);
+          setShowConversationHistory(false);
+          setShowConversationDetail(true);
+        }}
+      />
+
+      {/* 对话详情模态框 */}
+      <ConversationDetail
+        conversationId={selectedConversationId}
+        isOpen={showConversationDetail}
+        onClose={() => {
+          setShowConversationDetail(false);
+          setSelectedConversationId(null);
+        }}
+        onBack={() => {
+          setShowConversationDetail(false);
+          setShowConversationHistory(true);
+        }}
+      />
     </div>
   );
 }

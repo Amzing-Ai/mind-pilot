@@ -228,6 +228,64 @@ export function extractListNameFromAIResponse(aiResponse: string): string {
 }
 
 /**
+ * 从AI回复中提取AI建议
+ */
+export function extractAISuggestions(aiResponse: string): string {
+    // 匹配AI建议部分
+    const suggestionsMatch = /### 💡 AI建议\s*\n(.+?)(?=\n###|$)/s.exec(aiResponse);
+    if (suggestionsMatch) {
+        return suggestionsMatch[1]?.trim() ?? "";
+    }
+
+    // 匹配其他可能的建议标识
+    const altSuggestionsMatch = /(?:建议|推荐|提示|注意)[：:]\s*\n?(.+?)(?=\n\n|$)/s.exec(aiResponse);
+    if (altSuggestionsMatch) {
+        return altSuggestionsMatch[1]?.trim() ?? "";
+    }
+
+    return "";
+}
+
+/**
+ * 从AI回复中提取除目标分析和任务清单外的其他内容
+ */
+export function extractAdditionalContent(aiResponse: string): string {
+    // 移除目标分析部分
+    let content = aiResponse.replace(/### 🎯 目标分析[\s\S]*?(?=\n###|$)/, '');
+
+    // 移除任务清单部分
+    content = content.replace(/### 📝 任务清单[\s\S]*?(?=\n###|$)/, '');
+
+    // 移除AI建议和风险提示部分（这些会单独显示）
+    content = content.replace(/### 💡 AI建议[\s\S]*?(?=\n###|$)/, '');
+    content = content.replace(/### ⚠️ 可能风险[\s\S]*?(?=\n###|$)/, '');
+
+    // 清理多余的空行
+    content = content.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
+
+    return content;
+}
+
+/**
+ * 从AI回复中提取风险提示
+ */
+export function extractRiskWarnings(aiResponse: string): string {
+    // 匹配风险提示部分
+    const risksMatch = /### ⚠️ 可能风险\s*\n(.+?)(?=\n###|$)/s.exec(aiResponse);
+    if (risksMatch) {
+        return risksMatch[1]?.trim() ?? "";
+    }
+
+    // 匹配其他可能的风险标识
+    const altRisksMatch = /(?:风险|注意|警告|提醒)[：:]\s*\n?(.+?)(?=\n\n|$)/s.exec(aiResponse);
+    if (altRisksMatch) {
+        return altRisksMatch[1]?.trim() ?? "";
+    }
+
+    return "";
+}
+
+/**
  * 验证解析出的任务
  */
 export function validateParsedTasks(tasks: ParsedTask[]): { valid: boolean; errors: string[] } {
