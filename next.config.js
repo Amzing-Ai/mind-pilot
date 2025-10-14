@@ -8,7 +8,9 @@ import "./src/env.js";
 const config = {
     experimental: {
         // 把终端日志同时打到「浏览器控制台」
-        serverComponentsExternalPackages: ['next-logger']
+        serverComponentsExternalPackages: ['next-logger'],
+        // 禁用Turbopack以避免运行时错误
+        turbo: false
     }
 };
 

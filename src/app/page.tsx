@@ -1,53 +1,101 @@
 import { Suspense } from "react";
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { auth } from "@/auth";
-import CreateListModal from "@/components/createListModal";
-import { CheckLists } from "@/components/CheckLists";
-import { TitleTypedWelcome } from "@/components/fun-component/Title-typed";
 import { redirect } from "next/navigation";
+import { getTaskStats, getTasksWithPriority } from "@/actions/taskDashboard";
+import TaskStatsOverview from "@/components/TaskStatsOverview";
+import TaskList from "@/components/TaskList";
 
-async function Welcome() {
+// 定义任务类型
+type TaskWithList = {
+  id: number;
+  content: string;
+  status: string;
+  priority: string;
+  expiresAt: Date | null;
+  createdAt: Date;
+  userId: string;
+  done: boolean;
+  startTime: Date | null;
+  ListId: number;
+  list: {
+    name: string;
+    color: string;
+  };
+};
+
+async function TaskDashboard() {
   const session = await auth();
 
   if (!session?.user?.id) {
     redirect("/login");
   }
 
+  const [stats, tasks] = await Promise.all([
+    getTaskStats(),
+    getTasksWithPriority(1, 10)
+  ]);
+
   return (
-    <Card className="w-full sm:col-span-2" x-chunk="dashboard-05-chunk-0">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">欢迎 {session.user.name}</CardTitle>
-        <CardDescription className="max-w-lg leading-relaxed text-balance">
-          <TitleTypedWelcome />
-        </CardDescription>
-      </CardHeader>
-      <CardFooter>
-        <CreateListModal />
-      </CardFooter>
-    </Card>
+    <div className="bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+      <div className="container mx-auto px-4 py-8">
+        {/* Task Stats Overview */}
+        <TaskStatsOverview stats={stats} />
+
+        {/* Task List */}
+        <TaskList
+          initialTasks={tasks as TaskWithList[]}
+          initialHasMore={tasks.length === 10}
+        />
+      </div>
+    </div>
   );
 }
 
-function WelcomeFallback() {
-  return <Skeleton className="h-[180px] w-full" />;
+function TaskDashboardFallback() {
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+      <div className="w-full px-4 py-8">
+        {/* Header Skeleton */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-full bg-gray-600/50" />
+              <Skeleton className="h-8 w-48 bg-gray-600/50" />
+            </div>
+            <Skeleton className="h-8 w-8 rounded-full bg-gray-600/50" />
+          </div>
+          <Skeleton className="h-4 w-64 bg-gray-600/50" />
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 bg-gray-600/40 rounded-lg" />
+          ))}
+        </div>
+
+        {/* Task List Header Skeleton */}
+        <div className="flex items-center justify-between mb-6">
+          <Skeleton className="h-6 w-24 bg-gray-600/50" />
+          <Skeleton className="h-8 w-16 bg-gray-600/50 rounded" />
+        </div>
+
+        {/* Task Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 bg-gray-600/40 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function HomePage() {
   return (
-    <main className="flex w-full flex-col items-center px-4">
-      <Suspense fallback={<WelcomeFallback />}>
-        <Welcome />
-      </Suspense>
-      <Suspense fallback={<WelcomeFallback />}>
-        <CheckLists />
-      </Suspense>
-    </main>
+    <Suspense fallback={<TaskDashboardFallback />}>
+      <TaskDashboard />
+    </Suspense>
   );
 }

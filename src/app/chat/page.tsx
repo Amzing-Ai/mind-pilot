@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { TitleTypedDescription } from "@/components/fun-component/Title-typed";
 import ConversationHistory from "@/components/ConversationHistory";
 import ConversationDetail from "@/components/ConversationDetail";
+import { getTodayOverview } from "@/actions/todayOverview";
 
 export default function Chat() {
   const [input, setInput] = useState("");
@@ -37,6 +38,13 @@ export default function Chat() {
     listName?: string;
     createdAt: string;
   }>>([]);
+  const [todayOverview, setTodayOverview] = useState({
+    completedToday: 0,
+    inProgress: 0,
+    pending: 0,
+    createdToday: 0,
+    completionRate: 0
+  });
   const { messages, sendMessage } = useChat();
 
   // 自动调整textarea高度
@@ -155,9 +163,20 @@ export default function Chat() {
     }
   };
 
-  // 组件挂载时获取最近对话
+  // 获取今日概览数据
+  const fetchTodayOverview = async () => {
+    try {
+      const overview = await getTodayOverview();
+      setTodayOverview(overview);
+    } catch (error) {
+      console.error('获取今日概览失败:', error);
+    }
+  };
+
+  // 组件挂载时获取数据
   useEffect(() => {
     void fetchRecentConversations();
+    void fetchTodayOverview();
   }, []);
 
   // 格式化时间显示
@@ -739,9 +758,9 @@ export default function Chat() {
             </div>
             <div className="space-y-3">
               {[
-                { label: "已完成", count: "5个", icon: CheckCircle, color: "text-green-400" },
-                { label: "进行中", count: "2个", icon: Zap, color: "text-yellow-400" },
-                { label: "待处理", count: "3个", icon: Clock, color: "text-orange-400" },
+                { label: "已完成", count: `${todayOverview.completedToday}个`, icon: CheckCircle, color: "text-green-400" },
+                { label: "进行中", count: `${todayOverview.inProgress}个`, icon: Zap, color: "text-yellow-400" },
+                { label: "待处理", count: `${todayOverview.pending}个`, icon: Clock, color: "text-orange-400" },
               ].map((item, index) => (
                 <div key={`stats-${index}-${item.label || 'empty'}`} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -754,11 +773,14 @@ export default function Chat() {
             </div>
             <div className="mt-4">
               <div className="mb-2 flex justify-between text-sm">
-                <span className="text-white/80">今日完成率</span>
-                <span className="text-white">50%</span>
+                <span className="text-white/80">总体完成率</span>
+                <span className="text-white">{todayOverview.completionRate}%</span>
               </div>
               <div className="h-2 rounded-full bg-white/20">
-                <div className="h-2 w-1/2 rounded-full bg-gradient-to-r from-green-400 to-emerald-500"></div>
+                <div
+                  className="h-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500"
+                  style={{ width: `${todayOverview.completionRate}%` }}
+                ></div>
               </div>
             </div>
           </div>
