@@ -171,7 +171,7 @@ export default function MobileAnalysisPage({
               </CardTitle>
               <p className="text-white/60 text-xs mt-1">与全球用户一较高下</p>
             </CardHeader>
-            <CardContent className="relative p-2 space-y-1.5">
+            <CardContent className="relative p-3 space-y-1.5">
               {leaderboardData.slice(0, 5).map((user, index) => {
                 const isTop3 = user.rank <= 3;
                 const medalColors = ['from-amber-400 to-amber-600', 'from-slate-300 to-slate-500', 'from-orange-600 to-orange-800'];

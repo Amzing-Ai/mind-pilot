@@ -241,7 +241,7 @@ export default function TaskAnalysisPage({
               </CardTitle>
               <p className="text-white/60 text-xs sm:text-sm mt-1 sm:mt-2">与全球用户一较高下</p>
             </CardHeader>
-            <CardContent className="relative p-2 sm:p-4 md:p-6 space-y-1.5 sm:space-y-2 md:space-y-3">
+            <CardContent className="relative p-3 sm:p-4 md:p-6 space-y-1.5 sm:space-y-2 md:space-y-3">
               {leaderboardData.map((user, index) => {
                 const isTop3 = user.rank <= 3;
                 const medalColors = ['from-amber-400 to-amber-600', 'from-slate-300 to-slate-500', 'from-orange-600 to-orange-800'];
@@ -249,7 +249,7 @@ export default function TaskAnalysisPage({
                 return (
                   <motion.div
                     key={index}
-                    className={`group relative overflow-hidden rounded-2xl transition-all duration-300 ${
+                    className={`group relative overflow-hidden rounded-2xl transition-all duration-300 mx-1 ${
                       user.isCurrentUser
                         ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 border-2 border-cyan-400/50 scale-105'
                         : 'bg-white/5 border border-white/10 hover:bg-white/10'

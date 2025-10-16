@@ -32,15 +32,16 @@ model List {
 }
 
 model Task {
-    id        Int       @id @default(autoincrement())
-    content   String
-    userId    String
-    done      Boolean   @default(false)
-    expiresAt DateTime?
-    createdAt DateTime  @default(now())
-    priority  String    @default("medium") // low, medium, high, urgent
-    status    String    @default("pending") // pending, in_progress, completed, paused, cancelled
-    startTime DateTime?
+    id          Int       @id @default(autoincrement())
+    content     String
+    userId      String
+    done        Boolean   @default(false)
+    expiresAt   DateTime?
+    createdAt   DateTime  @default(now())
+    completedAt DateTime? // 任务完成时间
+    priority    String    @default("medium") // low, medium, high, urgent
+    status      String    @default("pending") // pending, in_progress, completed, paused, cancelled
+    startTime   DateTime?
 
     ListId Int
     list   List @relation(fields: [ListId], references: [id], onDelete: Cascade)

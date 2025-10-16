@@ -32,7 +32,11 @@ interface TaskListProps {
 }
 
 export default function TaskList({ initialTasks, initialHasMore }: TaskListProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  // 确保初始任务没有重复的ID
+  const uniqueInitialTasks = initialTasks.filter((task, index, self) =>
+    self.findIndex(t => t.id === task.id) === index
+  );
+  const [tasks, setTasks] = useState<Task[]>(uniqueInitialTasks);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [page, setPage] = useState(1);
@@ -92,8 +96,12 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
         new Promise(resolve => setTimeout(resolve, 1200)) // 减少到1200ms加载时间
       ]);
 
-      // 立即更新数据，不添加额外延迟
-      setTasks(prev => [...prev, ...(newTasks as any)]);
+      // 立即更新数据，不添加额外延迟，并确保没有重复的ID
+      setTasks(prev => {
+        const existingIds = new Set(prev.map(task => task.id));
+        const uniqueNewTasks = (newTasks as any).filter((task: any) => !existingIds.has(task.id));
+        return [...prev, ...uniqueNewTasks];
+      });
       setPage(prev => prev + 1);
       setHasMore(newTasks.length === 10);
     } catch (error) {
