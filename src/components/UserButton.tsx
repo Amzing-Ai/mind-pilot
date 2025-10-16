@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/menubar";
 
 import { useSession } from "next-auth/react";
+import Link from "next/link";
+import { Settings, User as UserIcon } from "lucide-react";
 
 function UserAvatar({ user }: { user: User }) {
   return (
@@ -27,14 +29,18 @@ function UserAvatar({ user }: { user: User }) {
           </Avatar>
         </MenubarTrigger>
         <MenubarContent>
-          <MenubarItem>
-            New Tab <MenubarShortcut>⌘T</MenubarShortcut>
+          <MenubarItem asChild>
+            <Link href="/settings" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              设置
+            </Link>
           </MenubarItem>
-          <MenubarItem>New Window</MenubarItem>
-          <MenubarSeparator />
-          <MenubarItem>Share</MenubarItem>
-          <MenubarSeparator />
-          <MenubarItem>Print</MenubarItem>
+          <MenubarItem asChild>
+            <Link href="/profile" className="flex items-center gap-2">
+              <UserIcon className="w-4 h-4" />
+              个人资料
+            </Link>
+          </MenubarItem>
           <MenubarSeparator />
           <MenubarItem>
             <UserSignOutButton />
