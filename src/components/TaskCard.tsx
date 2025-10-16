@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { updateTaskStatus } from "@/actions/taskDashboard";
-import { toast } from "sonner";
 import dayjs from "dayjs";
 
 interface TaskCardProps {
@@ -123,12 +122,10 @@ export default function TaskCard({ task, onStatusUpdate }: TaskCardProps) {
       // 立即更新本地进度条
       updateProgress(newStatus);
 
-      toast.success(`任务状态已更新为${statusConfig[newStatus as keyof typeof statusConfig]?.label}`);
-
       // 通知父组件状态已更新
       onStatusUpdate?.(task.id, newStatus);
     } catch (error) {
-      toast.error("更新任务状态失败");
+      // 错误处理由父组件TaskList统一处理
     } finally {
       setIsUpdating(false);
     }

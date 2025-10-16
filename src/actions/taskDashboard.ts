@@ -44,7 +44,94 @@ export async function getTaskStats() {
     };
 }
 
-// 获取任务列表，按优先级和时间节点排序
+// 获取任务列表，支持多种排序条件
+export async function getTasksWithSorting(page = 1, limit = 10, sortBy = 'priority') {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        throw new Error("用户未登录，请先登录");
+    }
+
+    const skip = (page - 1) * limit;
+
+    let orderBy: Array<Record<string, string>> = [];
+
+    switch (sortBy) {
+        case 'priority':
+            orderBy = [
+                { priority: 'desc' },
+                { expiresAt: 'asc' },
+                { createdAt: 'desc' }
+            ];
+            break;
+        case 'time_earliest':
+            orderBy = [
+                { expiresAt: 'asc' },
+                { priority: 'desc' },
+                { createdAt: 'desc' }
+            ];
+            break;
+        case 'time_latest':
+            orderBy = [
+                { expiresAt: 'desc' },
+                { priority: 'desc' },
+                { createdAt: 'desc' }
+            ];
+            break;
+        case 'duration_shortest':
+            // 按内容长度排序（假设内容长度代表任务复杂度）
+            orderBy = [
+                { createdAt: 'desc' }
+            ];
+            break;
+        case 'duration_longest':
+            // 按内容长度排序（假设内容长度代表任务复杂度）
+            orderBy = [
+                { createdAt: 'asc' }
+            ];
+            break;
+        default:
+            orderBy = [
+                { priority: 'desc' },
+                { expiresAt: 'asc' },
+                { createdAt: 'desc' }
+            ];
+    }
+
+    const tasks = await prisma.task.findMany({
+        where: {
+            userId: session.user.id,
+            // 只查询未完成的任务
+            status: {
+                not: 'completed'
+            }
+        },
+        include: {
+            list: {
+                select: {
+                    name: true,
+                    color: true
+                }
+            }
+        },
+        orderBy,
+        skip,
+        take: limit
+    });
+
+    // 对于按内容长度排序的情况，需要在应用层进行排序
+    if (sortBy === 'duration_shortest' || sortBy === 'duration_longest') {
+        tasks.sort((a, b) => {
+            const lengthA = a.content.length;
+            const lengthB = b.content.length;
+            return sortBy === 'duration_shortest' ? lengthA - lengthB : lengthB - lengthA;
+        });
+    }
+
+    return tasks;
+}
+
+// 获取任务列表，按优先级和时间节点排序（保持向后兼容）
 export async function getTasksWithPriority(page = 1, limit = 10) {
     const session = await auth();
 
@@ -155,7 +242,7 @@ export async function updateTaskStatus(taskId: number, status: string) {
             userId: session.user.id
         },
         data: {
-            status: status as any,
+            status: status as 'pending' | 'in_progress' | 'paused' | 'completed',
             done: status === 'completed',
             completedAt: status === 'completed' ? new Date(2025, 9, 16) : null // 强制使用正确的日期
         } as any
@@ -186,7 +273,7 @@ export async function updateTaskProgress(taskId: number, progress: number) {
             userId: session.user.id
         },
         data: {
-            status: newStatus as any,
+            status: newStatus as 'pending' | 'in_progress' | 'paused' | 'completed',
             done: newStatus === 'completed',
             completedAt: newStatus === 'completed' ? new Date(2025, 9, 16) : null // 强制使用正确的日期
         } as any

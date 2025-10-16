@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getTasksWithPriority, updateTaskStatus } from "@/actions/taskDashboard";
+import { getTasksWithPriority, getTasksWithSorting, updateTaskStatus } from "@/actions/taskDashboard";
 import TaskCard from "./TaskCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, List, Grid3X3 } from "lucide-react";
+import { RefreshCw, List, Grid3X3, ArrowUpDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -31,6 +31,13 @@ interface TaskListProps {
   initialHasMore: boolean;
 }
 
+type SortOption =
+  | 'priority'
+  | 'time_earliest'
+  | 'time_latest'
+  | 'duration_shortest'
+  | 'duration_longest';
+
 export default function TaskList({ initialTasks, initialHasMore }: TaskListProps) {
   // 确保初始任务没有重复的ID
   const uniqueInitialTasks = initialTasks.filter((task, index, self) =>
@@ -43,6 +50,82 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
   const [updatingTasks, setUpdatingTasks] = useState<Set<number>>(new Set());
+  const [sortOption, setSortOption] = useState<SortOption>('priority');
+  const [showSortModal, setShowSortModal] = useState(false);
+  const [isSorting, setIsSorting] = useState(false);
+
+  // 从本地存储加载排序设置并重新查询数据
+  useEffect(() => {
+    const savedSortOption = localStorage.getItem('taskSortOption') as SortOption;
+    if (savedSortOption && savedSortOption !== sortOption) {
+      setSortOption(savedSortOption);
+      // 使用缓存的排序配置重新查询数据，但不显示toast
+      refreshTasksWithSort(savedSortOption, false);
+    }
+  }, []);
+
+  // 保存排序设置到本地存储并重新查询数据
+  const handleSortChange = async (newSortOption: SortOption) => {
+    setSortOption(newSortOption);
+    localStorage.setItem('taskSortOption', newSortOption);
+    setShowSortModal(false);
+
+    // 设置排序状态并重新查询数据
+    setIsSorting(true);
+    await refreshTasksWithSort(newSortOption);
+    setIsSorting(false);
+  };
+
+  // 使用新的排序条件重新查询数据
+  const refreshTasksWithSort = async (sortBy: SortOption, showToast: boolean = true) => {
+    // 不设置loading状态，避免清空列表
+    try {
+      const newTasks = await getTasksWithSorting(1, 10, sortBy);
+      setTasks(newTasks as any);
+      setPage(1);
+      setHasMore(newTasks.length === 10);
+
+      // 只在需要时显示成功提示
+      if (showToast) {
+        const sortLabels = {
+          'priority': '按紧急程度',
+          'time_earliest': '按时间（更早）',
+          'time_latest': '按时间（更近）',
+          'duration_shortest': '按任务所需时间（最少）',
+          'duration_longest': '按任务所需时间（最多）'
+        };
+
+      toast.success(`已切换到${sortLabels[sortBy]}排序`, {
+        duration: 1500,
+        style: {
+          background: 'rgba(0, 0, 0, 0.8)',
+          border: '1px solid rgba(34, 197, 94, 0.5)',
+          color: '#22c55e',
+          backdropFilter: 'blur(10px)',
+          fontSize: '14px',
+          fontWeight: '700',
+          boxShadow: '0 4px 16px rgba(34, 197, 94, 0.3)'
+        }
+      });
+      }
+    } catch (error) {
+      console.error("重新查询任务失败:", error);
+      if (showToast) {
+      toast.error("排序查询失败，请稍后重试", {
+        duration: 3000,
+        style: {
+          background: 'rgba(0, 0, 0, 0.8)',
+          border: '1px solid rgba(239, 68, 68, 0.5)',
+          color: '#ef4444',
+          backdropFilter: 'blur(10px)',
+          fontSize: '14px',
+          fontWeight: '700',
+          boxShadow: '0 4px 16px rgba(239, 68, 68, 0.3)'
+        }
+      });
+      }
+    }
+  };
 
   const handleTaskStatusUpdate = async (taskId: number, newStatus: string) => {
     // 添加任务到更新中状态
@@ -59,7 +142,34 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
         'completed': '已完成'
       };
 
-      toast.success(`任务状态已更新为${statusLabels[newStatus as keyof typeof statusLabels]}`);
+      // 使用更简约的科技风格提示
+      if (newStatus === 'completed') {
+        toast.success('✓ 任务已完成', {
+          duration: 2000,
+          style: {
+            background: 'rgba(0, 0, 0, 0.8)',
+            border: '1px solid rgba(34, 197, 94, 0.5)',
+            color: '#22c55e',
+            backdropFilter: 'blur(10px)',
+            fontSize: '14px',
+            fontWeight: '700',
+            boxShadow: '0 4px 16px rgba(34, 197, 94, 0.3)'
+          }
+        });
+      } else {
+        toast.success(`任务状态已更新为${statusLabels[newStatus as keyof typeof statusLabels]}`, {
+          duration: 2000,
+          style: {
+            background: 'rgba(0, 0, 0, 0.8)',
+            border: '1px solid rgba(59, 130, 246, 0.5)',
+            color: '#3b82f6',
+            backdropFilter: 'blur(10px)',
+            fontSize: '14px',
+            fontWeight: '700',
+            boxShadow: '0 4px 16px rgba(59, 130, 246, 0.3)'
+          }
+        });
+      }
 
       // 如果任务完成，立即从列表中移除
       if (newStatus === 'completed') {
@@ -74,7 +184,18 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
       }
     } catch (error) {
       console.error('更新任务状态失败:', error);
-      toast.error('更新任务状态失败，请稍后重试');
+      toast.error('更新任务状态失败，请稍后重试', {
+        duration: 3000,
+        style: {
+          background: 'rgba(0, 0, 0, 0.8)',
+          border: '1px solid rgba(239, 68, 68, 0.5)',
+          color: '#ef4444',
+          backdropFilter: 'blur(10px)',
+          fontSize: '14px',
+          fontWeight: '700',
+          boxShadow: '0 4px 16px rgba(239, 68, 68, 0.3)'
+        }
+      });
     } finally {
       // 从更新中状态移除
       setUpdatingTasks(prev => {
@@ -92,7 +213,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
     try {
       // 添加最小加载时间，确保用户能看到加载动画
       const [newTasks] = await Promise.all([
-        getTasksWithPriority(page + 1, 10),
+        getTasksWithSorting(page + 1, 10, sortOption),
         new Promise(resolve => setTimeout(resolve, 1200)) // 减少到1200ms加载时间
       ]);
 
@@ -112,14 +233,14 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
         setLoading(false);
       }, 100);
     }
-  }, [loading, hasMore, page]);
+  }, [loading, hasMore, page, sortOption]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
       // 添加最小加载时间，确保用户能看到刷新动画
       const [newTasks] = await Promise.all([
-        getTasksWithPriority(1, 10),
+        getTasksWithSorting(1, 10, sortOption),
         new Promise(resolve => setTimeout(resolve, 600)) // 最小600ms刷新时间
       ]);
       setTasks(newTasks as any);
@@ -175,19 +296,27 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setShowSortModal(true)}
+            disabled={isSorting}
+            className="text-gray-300 border-gray-600 hover:bg-gray-700 p-2 relative"
+            title="排序任务"
+          >
+            <ArrowUpDown className={`w-4 h-4 ${isSorting ? 'animate-pulse' : ''}`} />
+            {isSorting && (
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setViewMode(viewMode === 'card' ? 'list' : 'card')}
-            className="text-gray-300 border-gray-600 hover:bg-gray-700"
+            className="text-gray-300 border-gray-600 hover:bg-gray-700 p-2"
+            title={viewMode === 'card' ? '切换到列表视图' : '切换到卡片视图'}
           >
             {viewMode === 'card' ? (
-              <>
-                <List className="w-4 h-4 mr-2" />
-                列表
-              </>
+              <List className="w-4 h-4" />
             ) : (
-              <>
-                <Grid3X3 className="w-4 h-4 mr-2" />
-                卡片
-              </>
+              <Grid3X3 className="w-4 h-4" />
             )}
           </Button>
           <Button
@@ -195,46 +324,74 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="text-gray-300 border-gray-600 hover:bg-gray-700"
+            className="text-gray-300 border-gray-600 hover:bg-gray-700 p-2"
+            title="刷新任务列表"
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            刷新
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </motion.div>
+
+      {/* 排序状态提示 - 使用骨架屏 */}
+      {isSorting && (
+        <div className="mb-4">
+          {viewMode === 'card' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="relative">
+                  <Skeleton className="h-48 bg-white/10 rounded-lg animate-pulse" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="relative">
+                  <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-2.5">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 pr-3">
+                        <Skeleton className="h-4 w-3/4 bg-white/20 mb-2" />
+                        <Skeleton className="h-3 w-1/2 bg-white/15" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Skeleton className="h-6 w-12 bg-white/20" />
+                          <Skeleton className="h-6 w-12 bg-white/20" />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Skeleton className="h-3 w-6 bg-white/15" />
+                          <Skeleton className="h-3 w-1 bg-white/15" />
+                          <Skeleton className="h-3 w-5 bg-white/15" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer rounded-lg"></div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Task Display */}
       {viewMode === 'card' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {tasks.map((task, index) => (
-            <motion.div
-              key={task.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                delay: index < 6 ? 0.9 + index * 0.1 : 0.1, // 初始任务有延迟，新加载的任务快速出现
-                duration: 0.5
-              }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
+            <div key={task.id}>
               <TaskCard task={task} onStatusUpdate={handleTaskStatusUpdate} />
-            </motion.div>
+            </div>
           ))}
         </div>
       ) : (
         <div className="space-y-2">
           {tasks.map((task, index) => (
-            <motion.div
+            <div
               key={task.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index < 6 ? 0.9 + index * 0.1 : 0.1 }}
               className={`bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-2.5 hover:bg-white/20 transition-all duration-300 ${
                 updatingTasks.has(task.id) ? 'opacity-75' : ''
               }`}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0 pr-3">
@@ -320,7 +477,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       )}
@@ -378,6 +535,60 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
       {!hasMore && tasks.length > 0 && (
         <div className="text-center mt-8">
           <p className="text-gray-400 text-sm">已显示所有任务</p>
+        </div>
+      )}
+
+      {/* Sort Modal */}
+      {showSortModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 w-full max-w-md"
+          >
+            <h3 className="text-white text-lg font-semibold mb-4">排序任务</h3>
+            <div className="space-y-3">
+              {[
+                { value: 'priority', label: '按紧急程度', icon: '🔥' },
+                { value: 'time_earliest', label: '按时间（更早）', icon: '⏰' },
+                { value: 'time_latest', label: '按时间（更近）', icon: '⏰' },
+                { value: 'duration_shortest', label: '按任务所需时间（最少）', icon: '⚡' },
+                { value: 'duration_longest', label: '按任务所需时间（最多）', icon: '⏳' }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleSortChange(option.value as SortOption)}
+                  disabled={isSorting}
+                  className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
+                    sortOption === option.value
+                      ? 'bg-white/20 text-white border border-white/30'
+                      : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-transparent'
+                  } ${isSorting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{option.icon}</span>
+                    <span className="font-medium">{option.label}</span>
+                    {sortOption === option.value && (
+                      <span className="ml-auto text-green-400">✓</span>
+                    )}
+                    {isSorting && sortOption === option.value && (
+                      <div className="ml-auto w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowSortModal(false)}
+                className="text-gray-300 border-gray-600 hover:bg-gray-700"
+              >
+                取消
+              </Button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>
