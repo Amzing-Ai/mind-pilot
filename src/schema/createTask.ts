@@ -6,8 +6,8 @@ export const createTaskZodSchema = z.object({
         message: "请填写任务内容",
     }),
     expiresAt: z.date().optional(),
-    priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-    status: z.enum(["pending", "in_progress", "completed", "paused", "cancelled"]).default("pending"),
+    priority: z.enum(["low", "medium", "high", "urgent"]),
+    status: z.enum(["pending", "in_progress", "completed", "paused", "cancelled"]),
     startTime: z.date().optional(),
 });
 

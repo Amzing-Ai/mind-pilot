@@ -57,6 +57,8 @@ export default function CreateTaskModal({ checkList }: Props) {
     defaultValues: {
       content: "",
       todoId: id,
+      status: "pending" as const,
+      priority: "medium" as const,
     },
   });
 

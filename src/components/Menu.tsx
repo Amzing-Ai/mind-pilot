@@ -37,7 +37,7 @@ export default function Menu({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen w-full lg:flex-row overflow-hidden">
       {/* 左侧边栏：≥lg 显示 */}
-      <aside className="hidden lg:flex lg:h-screen lg:w-64 lg:flex-col lg:bg-gradient-to-b lg:from-indigo-600/20 lg:via-blue-600/10 lg:to-purple-600/20 lg:backdrop-blur">
+      <aside className="hidden lg:flex lg:h-screen lg:w-64 lg:flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 backdrop-blur">
         <div className="flex h-full w-full flex-col gap-3 p-4">
           <div className="px-2 py-1 text-sm font-semibold text-indigo-400">
             智慧任务
@@ -56,7 +56,7 @@ export default function Menu({ children }: { children: React.ReactNode }) {
                     "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-left transition",
                     active
                       ? "text-white"
-                      : "text-gray-700 dark:text-gray-200"
+                      : "text-gray-300"
                   )}
                 >
                   {/* 背景高亮 */}
@@ -79,7 +79,7 @@ export default function Menu({ children }: { children: React.ReactNode }) {
                       "flex h-9 w-9 items-center justify-center rounded-lg",
                       active
                         ? "bg-white/20 text-white"
-                        : "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 text-indigo-500 dark:text-indigo-300"
+                        : "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 text-indigo-400"
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -101,7 +101,7 @@ export default function Menu({ children }: { children: React.ReactNode }) {
 
       {/* 底部导航：<lg 显示 */}
       <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden">
-        <div className="bg-white/70 p-1 shadow-2xl shadow-indigo-500/20 backdrop-blur dark:bg-gray-900/60">
+        <div className="bg-gray-900/90 p-1 shadow-2xl shadow-indigo-500/20 backdrop-blur">
           <nav className="grid grid-cols-4 gap-1">
             {items.map((item) => {
               const Icon = item.icon;
@@ -116,7 +116,7 @@ export default function Menu({ children }: { children: React.ReactNode }) {
                     "relative flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs",
                     active
                       ? "text-white"
-                      : "text-gray-700 dark:text-gray-200"
+                      : "text-gray-300"
                   )}
                 >
                   {mounted && (

@@ -39,8 +39,11 @@ type SortOption =
   | 'duration_longest';
 
 export default function TaskList({ initialTasks, initialHasMore }: TaskListProps) {
+  // 确保 initialTasks 是数组
+  const safeInitialTasks = Array.isArray(initialTasks) ? initialTasks : [];
+
   // 确保初始任务没有重复的ID
-  const uniqueInitialTasks = initialTasks.filter((task, index, self) =>
+  const uniqueInitialTasks = safeInitialTasks.filter((task, index, self) =>
     self.findIndex(t => t.id === task.id) === index
   );
   const [tasks, setTasks] = useState<Task[]>(uniqueInitialTasks);
@@ -80,10 +83,12 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
   const refreshTasksWithSort = async (sortBy: SortOption, showToast: boolean = true) => {
     // 不设置loading状态，避免清空列表
     try {
-      const newTasks = await getTasksWithSorting(1, 10, sortBy);
-      setTasks(newTasks as any);
-      setPage(1);
-      setHasMore(newTasks.length === 10);
+      const newTasksResult = await getTasksWithSorting(1, 10, sortBy);
+      if (newTasksResult.success && newTasksResult.data) {
+        setTasks(newTasksResult.data as any);
+        setPage(1);
+        setHasMore(newTasksResult.data.length === 10);
+      }
 
       // 只在需要时显示成功提示
       if (showToast) {
@@ -212,19 +217,21 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
     setLoading(true);
     try {
       // 添加最小加载时间，确保用户能看到加载动画
-      const [newTasks] = await Promise.all([
+      const [newTasksResult] = await Promise.all([
         getTasksWithSorting(page + 1, 10, sortOption),
         new Promise(resolve => setTimeout(resolve, 1200)) // 减少到1200ms加载时间
       ]);
 
       // 立即更新数据，不添加额外延迟，并确保没有重复的ID
-      setTasks(prev => {
-        const existingIds = new Set(prev.map(task => task.id));
-        const uniqueNewTasks = (newTasks as any).filter((task: any) => !existingIds.has(task.id));
-        return [...prev, ...uniqueNewTasks];
-      });
-      setPage(prev => prev + 1);
-      setHasMore(newTasks.length === 10);
+      if (newTasksResult.success && newTasksResult.data) {
+        setTasks(prev => {
+          const existingIds = new Set(prev.map(task => task.id));
+          const uniqueNewTasks = (newTasksResult.data as any).filter((task: any) => !existingIds.has(task.id));
+          return [...prev, ...uniqueNewTasks];
+        });
+        setPage(prev => prev + 1);
+        setHasMore(newTasksResult.data.length === 10);
+      }
     } catch (error) {
       console.error("加载更多任务失败:", error);
     } finally {
@@ -239,13 +246,15 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
     setRefreshing(true);
     try {
       // 添加最小加载时间，确保用户能看到刷新动画
-      const [newTasks] = await Promise.all([
+      const [newTasksResult] = await Promise.all([
         getTasksWithSorting(1, 10, sortOption),
         new Promise(resolve => setTimeout(resolve, 600)) // 最小600ms刷新时间
       ]);
-      setTasks(newTasks as any);
-      setPage(1);
-      setHasMore(newTasks.length === 10);
+      if (newTasksResult.success && newTasksResult.data) {
+        setTasks(newTasksResult.data as any);
+        setPage(1);
+        setHasMore(newTasksResult.data.length === 10);
+      }
     } catch (error) {
       console.error("刷新任务失败:", error);
     } finally {
@@ -268,7 +277,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
     return () => window.removeEventListener("scroll", handleScroll);
   }, [loadMoreTasks]);
 
-  if (tasks.length === 0) {
+  if (!Array.isArray(tasks) || tasks.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-gray-400 mb-4">
@@ -298,7 +307,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
             size="sm"
             onClick={() => setShowSortModal(true)}
             disabled={isSorting}
-            className="text-gray-300 border-gray-600 hover:bg-gray-700 p-2 relative"
+            className="bg-transparent text-gray-300 border-gray-600 hover:bg-gray-700 hover:text-white p-2 relative"
             title="排序任务"
           >
             <ArrowUpDown className={`w-4 h-4 ${isSorting ? 'animate-pulse' : ''}`} />
@@ -310,7 +319,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
             variant="outline"
             size="sm"
             onClick={() => setViewMode(viewMode === 'card' ? 'list' : 'card')}
-            className="text-gray-300 border-gray-600 hover:bg-gray-700 p-2"
+            className="bg-transparent text-gray-300 border-gray-600 hover:bg-gray-700 hover:text-white p-2"
             title={viewMode === 'card' ? '切换到列表视图' : '切换到卡片视图'}
           >
             {viewMode === 'card' ? (
@@ -324,7 +333,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="text-gray-300 border-gray-600 hover:bg-gray-700 p-2"
+            className="bg-transparent text-gray-300 border-gray-600 hover:bg-gray-700 hover:text-white p-2"
             title="刷新任务列表"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -378,7 +387,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
       {/* Task Display */}
       {viewMode === 'card' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tasks.map((task, index) => (
+          {Array.isArray(tasks) && tasks.map((task, index) => (
             <div key={task.id}>
               <TaskCard task={task} onStatusUpdate={handleTaskStatusUpdate} />
             </div>
@@ -386,7 +395,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
         </div>
       ) : (
         <div className="space-y-2">
-          {tasks.map((task, index) => (
+          {Array.isArray(tasks) && tasks.map((task, index) => (
             <div
               key={task.id}
               className={`bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-2.5 hover:bg-white/20 transition-all duration-300 ${
@@ -408,7 +417,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
                         variant="outline"
                         onClick={() => handleTaskStatusUpdate(task.id, 'in_progress')}
                         disabled={updatingTasks.has(task.id)}
-                        className="text-xs px-2 py-1 h-7 border-white/30 text-white hover:bg-white/10 hover:border-white/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-transparent text-xs px-2 py-1 h-7 border-white/30 text-white hover:bg-white/10 hover:border-white/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {updatingTasks.has(task.id) ? '更新中...' : '开始'}
                       </Button>
@@ -421,7 +430,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
                         variant="outline"
                         onClick={() => handleTaskStatusUpdate(task.id, 'paused')}
                         disabled={updatingTasks.has(task.id)}
-                        className="text-xs px-2 py-1 h-7 border-orange-300 text-orange-300 hover:bg-orange-500/20 hover:border-orange-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-transparent text-xs px-2 py-1 h-7 border-orange-300 text-orange-300 hover:bg-orange-500/20 hover:border-orange-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {updatingTasks.has(task.id) ? '更新中...' : '暂停'}
                       </Button>
@@ -434,7 +443,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
                         variant="outline"
                         onClick={() => handleTaskStatusUpdate(task.id, 'in_progress')}
                         disabled={updatingTasks.has(task.id)}
-                        className="text-xs px-2 py-1 h-7 border-blue-300 text-blue-300 hover:bg-blue-500/20 hover:border-blue-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-transparent text-xs px-2 py-1 h-7 border-blue-300 text-blue-300 hover:bg-blue-500/20 hover:border-blue-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {updatingTasks.has(task.id) ? '更新中...' : '继续'}
                       </Button>
@@ -524,7 +533,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
           <Button
             variant="outline"
             onClick={loadMoreTasks}
-            className="text-gray-300 border-gray-600 hover:bg-gray-700"
+            className="bg-transparent text-gray-300 border-gray-600 hover:bg-gray-700 hover:text-white"
           >
             加载更多任务
           </Button>
@@ -532,7 +541,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
       )}
 
       {/* No More Tasks */}
-      {!hasMore && tasks.length > 0 && (
+      {!hasMore && Array.isArray(tasks) && tasks.length > 0 && (
         <div className="text-center mt-8">
           <p className="text-gray-400 text-sm">已显示所有任务</p>
         </div>
@@ -583,7 +592,7 @@ export default function TaskList({ initialTasks, initialHasMore }: TaskListProps
               <Button
                 variant="outline"
                 onClick={() => setShowSortModal(false)}
-                className="text-gray-300 border-gray-600 hover:bg-gray-700"
+                className="bg-transparent text-gray-300 border-gray-600 hover:bg-gray-700 hover:text-white"
               >
                 取消
               </Button>

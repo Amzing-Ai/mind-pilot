@@ -69,7 +69,7 @@ export async function createTasks(data: createTasksZodSchemaType) {
     try {
         const createdTasks = await prisma.task.createMany({
             data: tasks.map(task => ({
-                userId: session.user.id!,
+                userId: session.user!.id!,
                 content: task.content,
                 expiresAt: task.expiresAt,
                 priority: task.priority as any,

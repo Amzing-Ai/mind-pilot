@@ -5,7 +5,11 @@ import prisma from '@/lib/prisma';
 export async function getTaskStats() {
     const session = await auth();
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录",
+            data: null
+        };
     }
 
     try {
@@ -111,19 +115,27 @@ export async function getTaskStats() {
         const rankPercentile = totalUsers > 0 ? Math.round(((totalUsers - userRank + 1) / totalUsers) * 100) : 0;
 
         return {
-            totalTasks,
-            completedTasks,
-            currentStreak,
-            longestStreak,
-            bestHour: bestHour.hour,
-            bestHourCount: bestHour.count,
-            globalRank: userRank,
-            rankPercentile,
-            hourlyDistribution
+            success: true,
+            error: null,
+            data: {
+                totalTasks,
+                completedTasks,
+                currentStreak,
+                longestStreak,
+                bestHour: bestHour.hour,
+                bestHourCount: bestHour.count,
+                globalRank: userRank,
+                rankPercentile,
+                hourlyDistribution
+            }
         };
     } catch (error) {
         console.error("获取任务统计数据失败:", error);
-        throw new Error("获取任务统计数据失败，请稍后重试");
+        return {
+            success: false,
+            error: "获取任务统计数据失败，请稍后重试",
+            data: null
+        };
     }
 }
 
@@ -131,7 +143,11 @@ export async function getTaskStats() {
 export async function getActivityData() {
     const session = await auth();
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录",
+            data: null
+        };
     }
 
     try {
@@ -195,10 +211,18 @@ export async function getActivityData() {
         console.log("数据数组后5条:", data.slice(-5));
         console.log("包含今天的数据:", data.filter(d => d.date === todayString));
         console.log("10月的数据:", data.filter(d => d.date.startsWith('2025-10')));
-        return data;
+        return {
+            success: true,
+            error: null,
+            data: data
+        };
     } catch (error) {
         console.error("获取活动数据失败:", error);
-        throw new Error("获取活动数据失败，请稍后重试");
+        return {
+            success: false,
+            error: "获取活动数据失败，请稍后重试",
+            data: null
+        };
     }
 }
 
@@ -206,7 +230,11 @@ export async function getActivityData() {
 export async function getLeaderboardData() {
     const session = await auth();
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录",
+            data: null
+        };
     }
 
     try {
@@ -283,10 +311,18 @@ export async function getLeaderboardData() {
             })
         );
 
-        return leaderboardData;
+        return {
+            success: true,
+            error: null,
+            data: leaderboardData
+        };
     } catch (error) {
         console.error("获取排行榜数据失败:", error);
-        throw new Error("获取排行榜数据失败，请稍后重试");
+        return {
+            success: false,
+            error: "获取排行榜数据失败，请稍后重试",
+            data: null
+        };
     }
 }
 
@@ -294,7 +330,11 @@ export async function getLeaderboardData() {
 export async function getInsightsData() {
     const session = await auth();
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录",
+            data: null
+        };
     }
 
     try {
@@ -372,14 +412,22 @@ export async function getInsightsData() {
             : 0;
 
         return {
-            thisWeekTasks,
-            improvementPercent,
-            goalProgress,
-            daysRemaining,
-            surpassPercent
+            success: true,
+            error: null,
+            data: {
+                thisWeekTasks,
+                improvementPercent,
+                goalProgress,
+                daysRemaining,
+                surpassPercent
+            }
         };
     } catch (error) {
         console.error("获取洞察数据失败:", error);
-        throw new Error("获取洞察数据失败，请稍后重试");
+        return {
+            success: false,
+            error: "获取洞察数据失败，请稍后重试",
+            data: null
+        };
     }
 }

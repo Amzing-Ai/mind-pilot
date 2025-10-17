@@ -6,6 +6,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import Menu from "@/components/Menu";
 import { Toaster } from "@/components/ui/sonner";
 import { SessionProvider } from "next-auth/react";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "MindPilot | 智慧笔记",
@@ -14,9 +15,15 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") ?? "";
+
+  // 如果是登录页面，不显示菜单
+  const isLoginPage = pathname.startsWith("/login");
+
   return (
     <html lang="zh-CN" suppressHydrationWarning className="h-full">
       <body className="h-full">
@@ -24,13 +31,17 @@ export default function RootLayout({
           {/* Step3: 设置 ThemeProvider */}
           <ThemeProvider
             attribute="class"
-            defaultTheme="light"
+            defaultTheme="dark"
             enableSystem={false}
             disableTransitionOnChange
           >
-            <Menu>
-              <div className="flex w-full h-full flex-col items-center">{children}</div>
-            </Menu>
+            {isLoginPage ? (
+              children
+            ) : (
+              <Menu>
+                <div className="flex w-full h-full flex-col items-center">{children}</div>
+              </Menu>
+            )}
             <Toaster position="top-center" richColors />
           </ThemeProvider>
         </SessionProvider>

@@ -383,7 +383,7 @@ export default function SettingsPage() {
                   return (
                     <div key={itemIndex}>
                       {itemIndex > 0 && <Separator className="bg-white/10" />}
-                      <motion.button
+                      <motion.div
                         className={`w-full flex items-center gap-4 p-5 transition-all ${
                           isDanger
                             ? 'hover:bg-red-500/10'
@@ -424,7 +424,7 @@ export default function SettingsPage() {
                             }`}
                           />
                         )}
-                      </motion.button>
+                      </motion.div>
                     </div>
                   );
                 })}

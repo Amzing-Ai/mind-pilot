@@ -31,10 +31,18 @@ async function TaskDashboard() {
     redirect("/login");
   }
 
-  const [stats, tasks] = await Promise.all([
+  const [statsResult, tasksResult] = await Promise.all([
     getTaskStats(),
     getTasksWithPriority(1, 10)
   ]);
+
+  // 检查认证状态
+  if (!statsResult.success || !tasksResult.success || !statsResult.data || !tasksResult.data) {
+    redirect("/login");
+  }
+
+  const stats = statsResult.data;
+  const tasks = tasksResult.data;
 
   return (
     <div className="bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
@@ -44,8 +52,8 @@ async function TaskDashboard() {
 
         {/* Task List */}
         <TaskList
-          initialTasks={tasks as TaskWithList[]}
-          initialHasMore={tasks.length === 10}
+          initialTasks={Array.isArray(tasks) ? tasks as TaskWithList[] : []}
+          initialHasMore={Array.isArray(tasks) ? tasks.length === 10 : false}
         />
       </div>
     </div>

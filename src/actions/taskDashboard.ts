@@ -9,7 +9,11 @@ export async function getTaskStats() {
     const session = await auth();
 
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录",
+            data: null
+        };
     }
 
     const [total, pending, inProgress, completed] = await Promise.all([
@@ -37,10 +41,14 @@ export async function getTaskStats() {
     ]);
 
     return {
-        total,
-        pending,
-        inProgress,
-        completed
+        success: true,
+        error: null,
+        data: {
+            total,
+            pending,
+            inProgress,
+            completed
+        }
     };
 }
 
@@ -49,7 +57,11 @@ export async function getTasksWithSorting(page = 1, limit = 10, sortBy = 'priori
     const session = await auth();
 
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录",
+            data: null
+        };
     }
 
     const skip = (page - 1) * limit;
@@ -119,6 +131,15 @@ export async function getTasksWithSorting(page = 1, limit = 10, sortBy = 'priori
         take: limit
     });
 
+    // 确保 tasks 是数组
+    if (!Array.isArray(tasks)) {
+        return {
+            success: true,
+            error: null,
+            data: []
+        };
+    }
+
     // 对于按内容长度排序的情况，需要在应用层进行排序
     if (sortBy === 'duration_shortest' || sortBy === 'duration_longest') {
         tasks.sort((a, b) => {
@@ -128,7 +149,11 @@ export async function getTasksWithSorting(page = 1, limit = 10, sortBy = 'priori
         });
     }
 
-    return tasks;
+    return {
+        success: true,
+        error: null,
+        data: tasks
+    };
 }
 
 // 获取任务列表，按优先级和时间节点排序（保持向后兼容）
@@ -136,7 +161,11 @@ export async function getTasksWithPriority(page = 1, limit = 10) {
     const session = await auth();
 
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录",
+            data: null
+        };
     }
 
     const skip = (page - 1) * limit;
@@ -183,6 +212,15 @@ export async function getTasksWithPriority(page = 1, limit = 10) {
         take: limit
     });
 
+    // 确保 tasks 是数组
+    if (!Array.isArray(tasks)) {
+        return {
+            success: true,
+            error: null,
+            data: []
+        };
+    }
+
     // 手动排序以确保正确的优先级顺序
     const sortedTasks = tasks.sort((a, b) => {
         // 状态优先级：进行中 > 待处理 > 暂停 > 取消
@@ -225,7 +263,11 @@ export async function getTasksWithPriority(page = 1, limit = 10) {
         return b.createdAt.getTime() - a.createdAt.getTime();
     });
 
-    return sortedTasks;
+    return {
+        success: true,
+        error: null,
+        data: sortedTasks
+    };
 }
 
 // 更新任务状态
@@ -233,7 +275,10 @@ export async function updateTaskStatus(taskId: number, status: string) {
     const session = await auth();
 
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录"
+        };
     }
 
     await prisma.task.update({
@@ -249,6 +294,11 @@ export async function updateTaskStatus(taskId: number, status: string) {
     });
 
     revalidatePath("/");
+
+    return {
+        success: true,
+        error: null
+    };
 }
 
 // 更新任务进度（通过计算完成度）
@@ -256,7 +306,10 @@ export async function updateTaskProgress(taskId: number, progress: number) {
     const session = await auth();
 
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录"
+        };
     }
 
     // 这里可以根据进度自动更新状态
@@ -280,4 +333,9 @@ export async function updateTaskProgress(taskId: number, progress: number) {
     });
 
     revalidatePath("/");
+
+    return {
+        success: true,
+        error: null
+    };
 }

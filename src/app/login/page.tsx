@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,7 +9,10 @@ import { useState } from "react";
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
 
   const trySignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -19,6 +22,37 @@ export default function Login() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
+    // 客户端验证
+    if (!email?.trim()) {
+      toast.error("请输入邮箱地址");
+      setLoading(false);
+      return;
+    }
+
+    if (!email.includes("@") || !email.includes(".")) {
+      toast.error("邮箱格式不正确");
+      setLoading(false);
+      return;
+    }
+
+    if (!password?.trim()) {
+      toast.error("请输入密码");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("密码长度不能少于8位");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length > 32) {
+      toast.error("密码长度不能超过32位");
+      setLoading(false);
+      return;
+    }
+
     try {
       const result = await signIn("credentials", {
         email,
@@ -26,20 +60,22 @@ export default function Login() {
         redirect: false,
       });
       if (result?.error) {
+        // 显示具体的错误信息
         toast.error(result.error);
       } else {
-        router.refresh();
-        router.push("/");
+        // 使用 window.location.href 确保完整的页面重载，包括中间件重新执行
+        window.location.href = callbackUrl;
       }
-    } catch {
-      toast.error("Unexpected error");
+    } catch (error) {
+      console.error("登录错误:", error);
+      toast.error("登录失败，请稍后重试");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="mt-20 flex min-h-screen items-start justify-center">
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
@@ -104,12 +140,13 @@ export default function Login() {
               className="block"
             >
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email
+                邮箱地址
               </span>
               <motion.input
                 name="email"
                 type="email"
                 required
+                placeholder="请输入您的邮箱地址"
                 whileFocus={{ scale: 1.02 }}
                 className="mt-1 w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 text-gray-800 placeholder-gray-400 shadow-sm transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400 focus:outline-none dark:border-gray-600 dark:bg-gray-700/70 dark:text-gray-100 dark:placeholder-gray-500"
               />
@@ -123,12 +160,13 @@ export default function Login() {
               className="block"
             >
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password
+                密码
               </span>
               <motion.input
                 name="password"
                 type="password"
                 required
+                placeholder="请输入您的密码（至少8位）"
                 whileFocus={{ scale: 1.02 }}
                 className="mt-1 w-full rounded-lg border border-gray-300 bg-white/70 px-3 py-2 text-gray-800 placeholder-gray-400 shadow-sm transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400 focus:outline-none dark:border-gray-600 dark:bg-gray-700/70 dark:text-gray-100 dark:placeholder-gray-500"
               />
@@ -158,7 +196,7 @@ export default function Login() {
                     className="flex items-center justify-center gap-2"
                   >
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Signing in...
+                    登录中...
                   </motion.div>
                 ) : (
                   <motion.span
@@ -167,7 +205,7 @@ export default function Login() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    Sign In
+                    登录
                   </motion.span>
                 )}
               </AnimatePresence>

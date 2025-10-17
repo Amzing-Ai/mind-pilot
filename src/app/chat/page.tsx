@@ -166,8 +166,10 @@ export default function Chat() {
   // 获取今日概览数据
   const fetchTodayOverview = async () => {
     try {
-      const overview = await getTodayOverview();
-      setTodayOverview(overview);
+      const overviewResult = await getTodayOverview();
+      if (overviewResult.success && overviewResult.data) {
+        setTodayOverview(overviewResult.data);
+      }
     } catch (error) {
       console.error('获取今日概览失败:', error);
     }

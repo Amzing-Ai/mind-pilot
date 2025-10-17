@@ -27,7 +27,7 @@ export async function createTasksSimple(data: {
         const insertPromises = tasks.map(task =>
             prisma.$executeRaw`
         INSERT INTO Task (content, userId, done, expiresAt, createdAt, priority, status, startTime, ListId)
-        VALUES (${task.content}, ${session.user.id!}, false, ${task.expiresAt}, NOW(), ${task.priority || 'medium'}, ${task.status || 'pending'}, ${task.startTime}, ${todoId})
+        VALUES (${task.content}, ${session.user!.id as string}, false, ${task.expiresAt}, NOW(), ${task.priority || 'medium'}, ${task.status || 'pending'}, ${task.startTime}, ${todoId})
       `
         );
 

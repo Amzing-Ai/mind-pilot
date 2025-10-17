@@ -217,7 +217,7 @@ export default function TaskCard({ task, onStatusUpdate }: TaskCardProps) {
             <Button
               size="sm"
               variant="outline"
-              className="flex-1 text-xs border-white/40 text-white backdrop-blur-sm bg-white/10 hover:bg-white/20 hover:border-white/60 hover:backdrop-blur-md transition-all duration-300"
+              className="flex-1 text-xs border-white/40 text-white backdrop-blur-sm bg-transparent hover:bg-white/20 hover:border-white/60 hover:backdrop-blur-md transition-all duration-300"
               onClick={() => handleStatusUpdate('completed')}
               disabled={isUpdating}
             >
@@ -230,7 +230,7 @@ export default function TaskCard({ task, onStatusUpdate }: TaskCardProps) {
             <Button
               size="sm"
               variant="outline"
-              className="flex-1 text-xs border-white/40 text-white backdrop-blur-sm bg-white/10 hover:bg-white/20 hover:border-white/60 hover:backdrop-blur-md transition-all duration-300"
+              className="flex-1 text-xs border-white/40 text-white backdrop-blur-sm bg-transparent hover:bg-white/20 hover:border-white/60 hover:backdrop-blur-md transition-all duration-300"
               onClick={() => handleStatusUpdate('in_progress')}
               disabled={isUpdating}
             >
@@ -243,7 +243,7 @@ export default function TaskCard({ task, onStatusUpdate }: TaskCardProps) {
             <Button
               size="sm"
               variant="outline"
-              className="flex-1 text-xs border-white/40 text-white backdrop-blur-sm bg-white/10 hover:bg-white/20 hover:border-white/60 hover:backdrop-blur-md transition-all duration-300"
+              className="flex-1 text-xs border-white/40 text-white backdrop-blur-sm bg-transparent hover:bg-white/20 hover:border-white/60 hover:backdrop-blur-md transition-all duration-300"
               onClick={() => handleStatusUpdate('paused')}
               disabled={isUpdating}
             >
@@ -256,7 +256,7 @@ export default function TaskCard({ task, onStatusUpdate }: TaskCardProps) {
             <Button
               size="sm"
               variant="outline"
-              className="flex-1 text-xs border-white/40 text-white backdrop-blur-sm bg-white/10 hover:bg-white/20 hover:border-white/60 hover:backdrop-blur-md transition-all duration-300"
+              className="flex-1 text-xs border-white/40 text-white backdrop-blur-sm bg-transparent hover:bg-white/20 hover:border-white/60 hover:backdrop-blur-md transition-all duration-300"
               onClick={() => handleStatusUpdate('in_progress')}
               disabled={isUpdating}
             >

@@ -6,11 +6,10 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
+    // 把终端日志同时打到「浏览器控制台」
+    serverExternalPackages: ['next-logger'],
     experimental: {
-        // 把终端日志同时打到「浏览器控制台」
-        serverComponentsExternalPackages: ['next-logger'],
-        // 禁用Turbopack以避免运行时错误
-        turbo: false
+        // 其他实验性功能可以在这里添加
     }
 };
 

@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 // 获取单个对话详情
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await auth();
@@ -13,9 +13,10 @@ export async function GET(
             return NextResponse.json({ error: "未授权" }, { status: 401 });
         }
 
+        const { id } = await params;
         const conversation = await prisma.conversation.findFirst({
             where: {
-                id: params.id,
+                id: id,
                 userId: session.user.id,
             },
         });
@@ -40,7 +41,7 @@ export async function GET(
 // 删除对话
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await auth();
@@ -48,9 +49,10 @@ export async function DELETE(
             return NextResponse.json({ error: "未授权" }, { status: 401 });
         }
 
+        const { id } = await params;
         const conversation = await prisma.conversation.findFirst({
             where: {
-                id: params.id,
+                id: id,
                 userId: session.user.id,
             },
         });
@@ -64,7 +66,7 @@ export async function DELETE(
 
         await prisma.conversation.delete({
             where: {
-                id: params.id,
+                id: id,
             },
         });
 

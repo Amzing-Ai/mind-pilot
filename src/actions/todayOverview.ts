@@ -8,7 +8,11 @@ export async function getTodayOverview() {
     const session = await auth();
 
     if (!session?.user?.id) {
-        throw new Error("用户未登录，请先登录");
+        return {
+            success: false,
+            error: "用户未登录，请先登录",
+            data: null
+        };
     }
 
     const today = new Date();
@@ -57,14 +61,22 @@ export async function getTodayOverview() {
         const completionRate = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
 
         return {
-            completedToday: completed, // 显示所有已完成的任务（与任务详情页一致）
-            inProgress, // 显示所有进行中的任务（与任务详情页一致）
-            pending, // 显示所有待处理的任务（与任务详情页一致）
-            createdToday, // 今日创建的任务数量
-            completionRate // 总体完成率（已完成/总任务数）
+            success: true,
+            error: null,
+            data: {
+                completedToday: completed, // 显示所有已完成的任务（与任务详情页一致）
+                inProgress, // 显示所有进行中的任务（与任务详情页一致）
+                pending, // 显示所有待处理的任务（与任务详情页一致）
+                createdToday, // 今日创建的任务数量
+                completionRate // 总体完成率（已完成/总任务数）
+            }
         };
     } catch (error) {
         console.error("获取今日概览失败:", error);
-        throw new Error("获取今日概览失败，请稍后重试");
+        return {
+            success: false,
+            error: "获取今日概览失败，请稍后重试",
+            data: null
+        };
     }
 }

@@ -31,9 +31,9 @@ export async function createListAndTasks(data: {
         console.log("创建的清单:", newList);
 
         // 创建任务
-        if (tasks.length > 0) {
+        if (tasks.length > 0 && session.user?.id) {
             const taskData = tasks.map(task => ({
-                userId: session.user.id!,
+                userId: session.user!.id as string,
                 content: task.content,
                 expiresAt: task.expiresAt,
                 priority: task.priority as any,

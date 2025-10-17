@@ -14,7 +14,7 @@ class CustomError extends CredentialsSignin {
 }
 
 class PasswordError extends CredentialsSignin {
-    code = "Invalid identifier or password"
+    code = "密码错误，请检查后重试"
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -37,9 +37,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     signInResult = await signInSchema.parseAsync(credentials)
                 } catch (error) {
                     if (error instanceof ZodError) {
-                        const stringErr = error.issues?.map((item) => item.message).join(",")
+                        const stringErr = error.issues?.map((item) => item.message).join("，")
                         throw new CustomError(stringErr)
                     }
+                    throw new CustomError("验证失败，请检查输入信息")
                 }
                 const { email, password } = signInResult as { email: string, password: string }
 
@@ -70,16 +71,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         jwt: async ({ token, user }) => {
             if ((user)) {
                 token.id = user.id;
-                token.userId = user.userId;
-                token.username = user.username;
+                token.userId = (user as any).userId;
+                token.username = (user as any).username;
             }
             return token;
         },
         session: async ({ session, token }) => {
             // ✅ 这里才真正写进 Session
             session.user.id = token.id as string;
-            session.user.userId = token.userId as string;
-            session.user.username = token.username as string;
+            (session.user as any).userId = token.userId as string;
+            (session.user as any).username = token.username as string;
             return session;
         },
     },

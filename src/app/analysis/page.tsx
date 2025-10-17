@@ -13,12 +13,23 @@ export default async function AnalysisPage() {
   }
 
   // 在服务端获取所有数据
-  const [stats, activityData, leaderboardData, insightsData] = await Promise.all([
+  const [statsResult, activityResult, leaderboardResult, insightsResult] = await Promise.all([
     getTaskStats(),
     getActivityData(),
     getLeaderboardData(),
     getInsightsData()
   ]);
+
+  // 检查认证状态
+  if (!statsResult.success || !activityResult.success || !leaderboardResult.success || !insightsResult.success ||
+      !statsResult.data || !activityResult.data || !leaderboardResult.data || !insightsResult.data) {
+    redirect('/login');
+  }
+
+  const stats = statsResult.data;
+  const activityData = activityResult.data;
+  const leaderboardData = leaderboardResult.data;
+  const insightsData = insightsResult.data;
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
