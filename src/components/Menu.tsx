@@ -94,7 +94,7 @@ export default function Menu({ children }: { children: React.ReactNode }) {
 
       {/* 右侧内容区 */}
       <main className="flex h-screen w-full flex-1 flex-col overflow-hidden pb-10 lg:pb-0">
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
           {children}
         </div>
       </main>
