@@ -45,8 +45,8 @@ async function TaskDashboard() {
   const tasks = tasksResult.data;
 
   return (
-    <div className="bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-full w-full bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+      <div className="w-full max-w-none px-4 md:px-6 lg:px-8 py-6">
         {/* Task Stats Overview */}
         <TaskStatsOverview stats={stats} />
 

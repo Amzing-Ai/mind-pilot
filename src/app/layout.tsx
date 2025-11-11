@@ -39,7 +39,7 @@ export default async function RootLayout({
               children
             ) : (
               <Menu>
-                <div className="flex w-full h-full flex-col items-center">{children}</div>
+                <div className="flex w-full h-full flex-col items-stretch">{children}</div>
               </Menu>
             )}
             <Toaster position="top-center" richColors />
